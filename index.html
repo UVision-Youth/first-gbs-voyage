@@ -260,8 +260,11 @@
       100% { transform: translateY(-80px) scale(0.4); opacity: 0; }
     }
 
+    /* 터치 가능 영역: 전체 화면(inset:0)에서 수위 영역(bottom:0)으로 변경 */
     #game-tap-area {
-      position: fixed; inset: 0; z-index: 4;
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 60%; /* 기본 수위 */
+      z-index: 4;
       -webkit-tap-highlight-color: transparent;
     }
 
@@ -502,7 +505,7 @@
      SCREEN 2 : MINI GAME
 ══════════════════════════════════════ -->
 <section class="screen" id="screen-game">
-  <!-- Tap area (full screen) -->
+  <!-- Tap area (수위에 맞춰 높이가 변함) -->
   <div id="game-tap-area"></div>
 
   <!-- Water -->
@@ -511,7 +514,8 @@
   <!-- HUD (above water) -->
   <div id="game-hud">
     <div id="game-title">🌊 물 퍼내기 미션</div>
-    <div id="instruction">배에 물이 찹니다!<br>화면을 터치해서 물을 퍼내세요! 🪣</div>
+    <!-- 안내 문구를 '차오른 물'을 터치하라고 직관적으로 변경 -->
+    <div id="instruction">배에 물이 찹니다!<br><span>차오른 물</span>을 터치해서 퍼내세요! 🪣</div>
     <div id="counter-ring">
       <div style="text-align: center;">
         <div id="touch-count">0</div>
@@ -734,9 +738,14 @@ function startGameScreen() {
 function updateGameUI() {
   $('touch-count').textContent = touchCount;
   $('prog-bar').style.width = `${(touchCount/currentGoal)*100}%`;
+  
   // Water height: starts at 60%, reduces to ~10% at goal
   const waterH = 60 - (touchCount / currentGoal) * 50;
   $('water-fill').style.height = `${waterH}%`;
+  
+  // 💡 터치 가능 영역(game-tap-area)도 현재 수위와 동일하게 실시간으로 줄어들도록 설정!
+  // 출렁이는 물결 디자인을 고려하여 +20px 정도 여유를 둡니다.
+  $('game-tap-area').style.height = `calc(${waterH}% + 20px)`; 
 }
 
 $('game-tap-area').addEventListener('click', handleTap);
