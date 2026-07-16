@@ -84,7 +84,7 @@
     }
     @keyframes rock {
       0%,100% { transform: translateX(-50%) rotate(-8deg); }
-      50%      { transform: translateX(-50%) rotate( 8deg); }
+      50%     { transform: translateX(-50%) rotate( 8deg); }
     }
 
     /* ===== INTRO SCREEN ===== */
@@ -126,8 +126,27 @@
     }
     .intro-verse em { color: #f5c842; font-style: normal; }
 
+    /* 사용자 정보 폼 */
+    .user-info-form {
+      display: flex; flex-direction: column; gap: 12px;
+      width: 100%; max-width: 260px; margin-top: 5px;
+    }
+    .user-info-form select,
+    .user-info-form input {
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.1);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 12px; color: white;
+      font-size: 15px; outline: none; text-align: center;
+      font-family: inherit;
+    }
+    .user-info-form select { cursor: pointer; }
+    .user-info-form select option { background: #1a2a4a; color: white; }
+    .user-info-form input::placeholder { color: rgba(255,255,255,0.5); }
+    .user-info-form input:focus, .user-info-form select:focus { border-color: #f5c842; }
+
     .btn-start {
-      margin-top: 8px;
+      margin-top: 4px;
       background: linear-gradient(135deg, #f5c842, #ff9f43);
       color: #1a1a1a; border: none; border-radius: 50px;
       padding: 16px 48px; font-size: 18px; font-weight: 800;
@@ -192,6 +211,7 @@
       text-align: center; color: #fff;
       line-height: 1.5; margin-bottom: 12px;
     }
+    #instruction span { color: #ff9f43; }
 
     /* Counter ring */
     #counter-ring {
@@ -342,7 +362,7 @@
       opacity: 1; transform: translate(-50%,-50%) scale(1);
     }
     #wrong-msg .emoji { font-size: 30px; display: block; margin-bottom: 6px; }
-    #wrong-msg .txt   { font-size: 15px; font-weight: 700; }
+    #wrong-msg .txt   { font-size: 15px; font-weight: 700; line-height: 1.4; }
 
     /* Progress dots */
     .quiz-dots {
@@ -370,13 +390,13 @@
     }
     @keyframes sun-pulse {
       0%,100% { box-shadow: 0 0 40px 15px rgba(253,216,53,0.5); }
-      50%      { box-shadow: 0 0 60px 25px rgba(253,216,53,0.7); }
+      50%     { box-shadow: 0 0 60px 25px rgba(253,216,53,0.7); }
     }
 
     .end-boat { font-size: 64px; animation: gentle-rock 4s ease-in-out infinite; }
     @keyframes gentle-rock {
       0%,100% { transform: rotate(-3deg); }
-      50%      { transform: rotate( 3deg); }
+      50%     { transform: rotate( 3deg); }
     }
 
     .end-title {
@@ -465,6 +485,14 @@
     마가복음 4:39
   </div>
 
+  <div class="user-info-form">
+    <select id="sun-select">
+      <option value="" disabled selected>순 선택</option>
+      <!-- JS로 랜덤 배치됨 -->
+    </select>
+    <input type="text" id="name-input" placeholder="이름을 입력하세요" />
+  </div>
+
   <button class="btn-start" id="btn-start">⚓ 항해 시작!</button>
 
   <p class="intro-scroll-hint">▼ 폭풍이 기다리고 있다 ▼</p>
@@ -483,11 +511,11 @@
   <!-- HUD (above water) -->
   <div id="game-hud">
     <div id="game-title">🌊 물 퍼내기 미션</div>
-    <div id="instruction">배에 물이 찹니다!<br><strong>화면을 20번 터치해서 물을 퍼내세요! 🪣</strong></div>
+    <div id="instruction">배에 물이 찹니다!<br>화면을 터치해서 물을 퍼내세요! 🪣</div>
     <div id="counter-ring">
-      <div>
+      <div style="text-align: center;">
         <div id="touch-count">0</div>
-        <div id="count-label">/ 20</div>
+        <div id="count-label">/ <span id="goal-label">60</span></div>
       </div>
     </div>
     <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
@@ -519,7 +547,7 @@
     <!-- dynamically injected -->
   </div>
 
-  <p class="quiz-hint" id="quiz-hint">⚡ 틀리면 다시 도전!</p>
+  <p class="quiz-hint" id="quiz-hint">⚡ 틀리면 2배의 물을 다시 퍼내야 합니다!</p>
 </section>
 
 <!-- ══════════════════════════════════════
@@ -591,7 +619,7 @@ function showScreen(name) {
 })();
 
 /* ==========================================
-   RAIN
+   RAIN & LIGHTNING
 ========================================== */
 let rainDrops = [];
 function startRain() {
@@ -616,9 +644,6 @@ function stopRain() {
   rainDrops = [];
 }
 
-/* ==========================================
-   LIGHTNING
-========================================== */
 let lightInterval;
 function startLightning() {
   stopLightning();
@@ -647,17 +672,32 @@ function calmBoat() {
 function hideBoat() { boatIcon.style.display = 'none'; }
 
 /* ==========================================
-   SCREEN: INTRO
+   SCREEN: INTRO (순/이름 처리)
 ========================================== */
 (function initIntro() {
   startRain();
   startLightning();
   startBoatRock();
+
+  // 순 랜덤 배치 (1~13)
+  const sunSelect = $('sun-select');
+  const suns = Array.from({length: 13}, (_, i) => i + 1);
+  suns.sort(() => Math.random() - 0.5); // Shuffle
+  suns.forEach(s => {
+    let opt = document.createElement('option');
+    opt.value = s + '순';
+    opt.textContent = s + '순';
+    sunSelect.appendChild(opt);
+  });
+
   $('btn-start').addEventListener('click', () => {
+    if (!sunSelect.value || !$('name-input').value.trim()) {
+      alert("순과 이름을 모두 입력해주세요!");
+      return;
+    }
+    
     // Screen shake
     document.body.style.animation = 'none';
-    document.body.classList.add('shaking');
-    // quick CSS shake via inline
     let shakeCount = 0;
     const shakeInterval = setInterval(() => {
       const x = (Math.random()-0.5)*12;
@@ -666,7 +706,7 @@ function hideBoat() { boatIcon.style.display = 'none'; }
       if (++shakeCount > 12) {
         clearInterval(shakeInterval);
         document.body.style.transform = '';
-        startGameScreen();
+        startGameScreen(); // 게임 시작
       }
     }, 60);
   });
@@ -676,19 +716,26 @@ function hideBoat() { boatIcon.style.display = 'none'; }
    SCREEN: MINI GAME (물 퍼내기)
 ========================================== */
 let touchCount = 0;
-const GOAL = 20;
+let currentGoal = 60; // 초기 목표치 60
 
 function startGameScreen() {
   showScreen('game');
   touchCount = 0;
+  $('goal-label').textContent = currentGoal;
+  
+  // 폭풍 효과 재시작 (오답 후 돌아왔을 때를 대비)
+  startRain();
+  startLightning();
+  startBoatRock();
+  
   updateGameUI();
 }
 
 function updateGameUI() {
   $('touch-count').textContent = touchCount;
-  $('prog-bar').style.width = `${(touchCount/GOAL)*100}%`;
-  // Water height: starts at 60%, reduces to ~10% at 20 touches
-  const waterH = 60 - (touchCount / GOAL) * 50;
+  $('prog-bar').style.width = `${(touchCount/currentGoal)*100}%`;
+  // Water height: starts at 60%, reduces to ~10% at goal
+  const waterH = 60 - (touchCount / currentGoal) * 50;
   $('water-fill').style.height = `${waterH}%`;
 }
 
@@ -699,19 +746,20 @@ $('game-tap-area').addEventListener('touchstart', e => {
 }, { passive: false });
 
 function handleTap(e) {
-  if (touchCount >= GOAL) return;
+  if (touchCount >= currentGoal) return;
 
   touchCount++;
   updateGameUI();
   spawnRipple(e.clientX, e.clientY);
   spawnBucket(e.clientX, e.clientY);
 
-  if (touchCount >= GOAL) {
+  if (touchCount >= currentGoal) {
     setTimeout(() => {
       stopRain();
       stopLightning();
       calmBoat();
-      showQuizScreen();
+      // 기존에 풀던 문제로 복귀
+      showQuizScreen(false);
     }, 600);
   }
 }
@@ -746,28 +794,24 @@ const QUIZZES = [
     type   : 'ox',
     q      : '제자들은 갈릴리 바다의 베테랑 어부였기 때문에\n폭풍을 두려워하지 않았다.',
     answer : 'X',
-    hint   : '어부도 두려워했어요 🌊',
   },
   {
     type   : 'ox',
     q      : '배에 물이 차고 죽게 되었을 때,\n예수님은 배 안에서 주무시고 계셨다.',
     answer : 'O',
-    hint   : '마가복음 4:38을 찾아보세요! 📖',
   },
   {
     type   : 'subj',
     q      : '예수님께서 바람과 물결을 꾸짖어 잠잠하게 하신 것은\n그분이 단순한 위인이 아니라 \'이것\'임을 보여준다.',
-    answer : '하나님',
-    alternatives: ['하나님이신 예수님', '예수님은 하나님', '하느님'],
-    hint   : '두 글자로 답해봐요 ✍️',
+    contains : ['하나님', '창조주'], // 정답 처리 조건
   },
 ];
 
 let currentQ = 0;
 let wrongTimeouts = [];
 
-function showQuizScreen() {
-  currentQ = 0;
+function showQuizScreen(resetQ = true) {
+  if(resetQ) currentQ = 0;
   showScreen('quiz');
   renderQuiz();
 }
@@ -785,7 +829,6 @@ function renderQuiz() {
   const q = QUIZZES[currentQ];
   $('quiz-step').textContent = `문제 ${currentQ+1} / 3`;
   $('quiz-q').textContent    = q.q;
-  $('quiz-hint').textContent = `⚡ 틀리면 다시 도전!`;
   updateDots(currentQ);
 
   const card = $('quiz-card');
@@ -807,7 +850,7 @@ function renderQuiz() {
   } else {
     card.innerHTML = `
       <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:12px;">
-        정답을 직접 입력하세요 ✍️
+        '창조주' 또는 '하나님'이 포함되게 입력해주세요 ✍️
       </div>
       <div class="subj-group">
         <input class="subj-input" id="subj-input" type="text" placeholder="정답 입력..." maxlength="20" />
@@ -833,21 +876,18 @@ function checkAnswer(val) {
 
   if (q.type === 'ox') {
     correct = val.toUpperCase() === q.answer.toUpperCase();
-  } else {
-    const normalized = val.replace(/\s/g, '').toLowerCase();
-    const answers = [q.answer, ...(q.alternatives || [])].map(a =>
-      a.replace(/\s/g, '').toLowerCase()
-    );
-    correct = answers.includes(normalized);
+  } else if (q.contains) {
+    // 키워드(창조주, 하나님) 중 하나라도 포함되어 있으면 정답
+    correct = q.contains.some(keyword => val.includes(keyword));
   }
 
   if (correct) {
     updateDots(currentQ + 1);
     currentQ++;
     if (currentQ >= QUIZZES.length) {
-      showEndScreen();
+      sendWebhookAndFinish();
     } else {
-      // Brief green flash
+      // 정답 초록색 이펙트
       const card = $('quiz-card');
       card.style.borderColor = '#2ecc71';
       card.style.boxShadow   = '0 0 20px rgba(46,204,113,0.4)';
@@ -858,23 +898,22 @@ function checkAnswer(val) {
       }, 400);
     }
   } else {
-    showWrong();
+    showWrongPenalty();
   }
 }
 
-function showWrong() {
+function showWrongPenalty() {
   const overlay = $('wrong-overlay');
   const msg     = $('wrong-msg');
-  $('wrong-txt').textContent = [
-    '다시 생각해봐요! 🌩️',
-    '폭풍이 다시 몰려옵니다! ⛈️',
-    '성경을 떠올려봐요! 📖',
-  ][Math.floor(Math.random()*3)];
+  
+  // 페널티 적용 (클릭수 2배 증가)
+  currentGoal *= 2;
+  $('wrong-txt').innerHTML = `틀렸습니다! 폭풍이 강해집니다.<br>물을 <strong>${currentGoal}번</strong> 퍼내야 합니다! ⛈️`;
 
   overlay.style.opacity = '1';
   msg.classList.add('show');
 
-  // Shake quiz card
+  // 카드 흔들림
   const card = $('quiz-card');
   card.style.animation = 'none';
   card.style.transform = 'translateX(0)';
@@ -884,9 +923,39 @@ function showWrong() {
     if (++shakes > 6) { clearInterval(shakeIt); card.style.transform = ''; }
   }, 60);
 
-  const t1 = setTimeout(() => { overlay.style.opacity = '0'; }, 500);
-  const t2 = setTimeout(() => { msg.classList.remove('show'); }, 700);
-  wrongTimeouts.push(t1, t2);
+  // 1.5초 후 물 퍼내기 게임(페널티)으로 다시 이동
+  setTimeout(() => { 
+    overlay.style.opacity = '0'; 
+    msg.classList.remove('show');
+    startGameScreen(); 
+  }, 1800);
+}
+
+function sendWebhookAndFinish() {
+  const selectedSun = $('sun-select').value;
+  const userName = $('name-input').value.trim();
+  
+  const payload = {
+    "과": "1과",
+    "순": selectedSun,
+    "이름": userName
+  };
+
+  // Google Apps Script로 POST 전송
+  fetch("https://script.google.com/macros/s/AKfycbyTs7CZtVqTwXbftQJxW76NxXzXvzTTyJfULKqsRyjczf_TqerBxz4Yv5_9QQSjLSveIg/exec", {
+    method: "POST",
+    mode: "no-cors",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(payload)
+  }).then(() => {
+    console.log("데이터 전송 완료");
+  }).catch(e => {
+    console.error("데이터 전송 오류:", e);
+  });
+
+  showEndScreen();
 }
 
 /* ==========================================
@@ -924,13 +993,18 @@ function launchConfetti() {
 $('btn-restart').addEventListener('click', () => {
   confettiPieces.forEach(p => p.remove());
   confettiPieces = [];
+  
+  // 리셋 시 목표 초기화
+  currentGoal = 60;
+  touchCount = 0;
+  currentQ = 0;
+
   stopRain();
   startRain();
   startLightning();
   startBoatRock();
   boatIcon.style.display = 'block';
-  touchCount = 0;
-  currentQ = 0;
+  
   showScreen('intro');
 });
 </script>
