@@ -723,6 +723,44 @@ function hideBoat() { boatIcon.style.display = 'none'; }
 })();
 
 /* ==========================================
+   SCREEN: MINI GAME (물 퍼내기)
+========================================== */
+let touchCount = 0;
+let currentGoal = 30; // 초기 목표치 30
+
+function startGameScreen() {
+  showScreen('game');
+  touchCount = 0;
+  $('goal-label').textContent = currentGoal;
+  
+  // 폭풍 효과 재시작 (오답 후 돌아왔을 때를 대비)
+  startRain();
+  startLightning();
+  startBoatRock();
+  
+  updateGameUI();
+}
+
+function updateGameUI() {
+  $('touch-count').textContent = touchCount;
+  $('prog-bar').style.width = `${(touchCount/currentGoal)*100}%`;
+  
+  // Water height: starts at 60%, reduces to ~10% at goal
+  const waterH = 60 - (touchCount / currentGoal) * 50;
+  $('water-fill').style.height = `${waterH}%`;
+  
+  // 💡 터치 가능 영역(game-tap-area)도 현재 수위와 동일하게 실시간으로 줄어들도록 설정!
+  // 출렁이는 물결 디자인을 고려하여 +20px 정도 여유를 둡니다.
+  $('game-tap-area').style.height = `calc(${waterH}% + 20px)`; 
+}
+
+$('game-tap-area').addEventListener('click', handleTap);
+$('game-tap-area').addEventListener('touchstart', e => {
+  e.preventDefault();
+  handleTap(e.touches[0]);
+}, { passive: false });
+
+/* ==========================================
    SCREEN: MINI GAME (드래그로 물 퍼내기)
 ========================================== */
 let startY = 0;
