@@ -7,7 +7,13 @@
   <style>
     /* ===== RESET & BASE ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
+    #game-tap-area {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      height: 60%; 
+      z-index: 4;
+      cursor: grab; /* 추가 */
+      -webkit-tap-highlight-color: transparent;
+    }
     :root {
       --storm-dark:  #0a0e1a;
       --storm-blue:  #1a2a4a;
@@ -717,57 +723,39 @@ function hideBoat() { boatIcon.style.display = 'none'; }
 })();
 
 /* ==========================================
-   SCREEN: MINI GAME (물 퍼내기)
+   SCREEN: MINI GAME (드래그로 물 퍼내기)
 ========================================== */
-let touchCount = 0;
-let currentGoal = 60; // 초기 목표치 60
+let startY = 0;
+const dragThreshold = 50; // 드래그 최소 거리 (픽셀)
 
-function startGameScreen() {
-  showScreen('game');
-  touchCount = 0;
-  $('goal-label').textContent = currentGoal;
-  
-  // 폭풍 효과 재시작 (오답 후 돌아왔을 때를 대비)
-  startRain();
-  startLightning();
-  startBoatRock();
-  
-  updateGameUI();
-}
-
-function updateGameUI() {
-  $('touch-count').textContent = touchCount;
-  $('prog-bar').style.width = `${(touchCount/currentGoal)*100}%`;
-  
-  // Water height: starts at 60%, reduces to ~10% at goal
-  const waterH = 60 - (touchCount / currentGoal) * 50;
-  $('water-fill').style.height = `${waterH}%`;
-  
-  // 💡 터치 가능 영역(game-tap-area)도 현재 수위와 동일하게 실시간으로 줄어들도록 설정!
-  // 출렁이는 물결 디자인을 고려하여 +20px 정도 여유를 둡니다.
-  $('game-tap-area').style.height = `calc(${waterH}% + 20px)`; 
-}
-
-$('game-tap-area').addEventListener('click', handleTap);
-$('game-tap-area').addEventListener('touchstart', e => {
-  e.preventDefault();
-  handleTap(e.touches[0]);
+$('game-tap-area').addEventListener('touchstart', (e) => {
+  startY = e.touches[0].clientY;
 }, { passive: false });
 
-function handleTap(e) {
+$('game-tap-area').addEventListener('touchend', (e) => {
+  const endY = e.changedTouches[0].clientY;
+  const deltaY = startY - endY; // 위로 드래그하면 양수
+
+  // 위로 드래그했고, 최소 거리 이상일 때만 카운트
+  if (deltaY > dragThreshold) {
+    handleDragAction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
+  }
+}, { passive: false });
+
+function handleDragAction(x, y) {
   if (touchCount >= currentGoal) return;
 
   touchCount++;
   updateGameUI();
-  spawnRipple(e.clientX, e.clientY);
-  spawnBucket(e.clientX, e.clientY);
+  
+  // 시각 효과: 드래그한 지점에서 버킷 튀어오름
+  spawnBucket(x, y);
 
   if (touchCount >= currentGoal) {
     setTimeout(() => {
       stopRain();
       stopLightning();
       calmBoat();
-      // 기존에 풀던 문제로 복귀
       showQuizScreen(false);
     }, 600);
   }
