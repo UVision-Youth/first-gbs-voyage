@@ -7,13 +7,7 @@
   <style>
     /* ===== RESET & BASE ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    #game-tap-area {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 60%; 
-      z-index: 4;
-      cursor: grab; /* 추가 */
-      -webkit-tap-highlight-color: transparent;
-    }
+
     :root {
       --storm-dark:  #0a0e1a;
       --storm-blue:  #1a2a4a;
@@ -33,7 +27,7 @@
       font-family: var(--font-main);
       background: var(--storm-dark);
       color: var(--white);
-      touch-action: manipulation;
+      touch-action: none; /* 드래그 방해 방지 */
     }
 
     /* ===== SCREEN SYSTEM ===== */
@@ -160,7 +154,6 @@
       box-shadow: 0 6px 24px rgba(245,200,66,0.45);
       transition: transform 0.15s, box-shadow 0.15s;
       position: relative; z-index: 5;
-      -webkit-tap-highlight-color: transparent;
     }
     .btn-start:active { transform: scale(0.95); box-shadow: 0 2px 10px rgba(245,200,66,0.3); }
 
@@ -171,418 +164,151 @@
     @keyframes bounce { 0%,100%{ transform: translateY(0);} 50%{ transform: translateY(-5px);} }
 
     /* ===== MINI GAME SCREEN ===== */
-    #screen-game {
-      background: transparent;
-      gap: 0; justify-content: flex-start;
-      padding-top: 0;
-    }
-
-    /* Water fill */
+    #screen-game { background: transparent; gap: 0; justify-content: flex-start; padding-top: 0; }
     #water-fill {
       position: fixed; bottom: 0; left: 0; right: 0;
       height: 60%;
       background: linear-gradient(to bottom, #1e90ff88, #0057b8cc);
       transition: height 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
       z-index: 3;
-      overflow: hidden;
     }
     #water-fill::before {
-      content: '';
-      position: absolute; top: -20px; left: -50%;
+      content: ''; position: absolute; top: -20px; left: -50%;
       width: 200%; height: 40px;
-      background: radial-gradient(ellipse at 50% 100%,
-        rgba(30,144,255,0.9) 0%, transparent 70%);
+      background: radial-gradient(ellipse at 50% 100%, rgba(30,144,255,0.9) 0%, transparent 70%);
       animation: wave-top 2.2s linear infinite;
     }
-    @keyframes wave-top {
-      0%   { transform: translateX(0); }
-      100% { transform: translateX(50%); }
-    }
+    @keyframes wave-top { 0% { transform: translateX(0); } 100% { transform: translateX(50%); } }
 
-    /* Game HUD */
     #game-hud {
       position: fixed; top: 0; left: 0; right: 0;
       z-index: 10; padding: 20px 20px 12px;
       background: linear-gradient(to bottom, rgba(10,14,26,0.95) 60%, transparent);
     }
-
-    #game-title {
-      font-size: 13px; color: #8ecae6;
-      letter-spacing: 1.5px; margin-bottom: 8px;
-      text-align: center;
-    }
-
-    #instruction {
-      font-size: 15px; font-weight: 700;
-      text-align: center; color: #fff;
-      line-height: 1.5; margin-bottom: 12px;
-    }
+    #game-title { font-size: 13px; color: #8ecae6; letter-spacing: 1.5px; margin-bottom: 8px; text-align: center; }
+    #instruction { font-size: 15px; font-weight: 700; text-align: center; color: #fff; line-height: 1.5; margin-bottom: 12px; }
     #instruction span { color: #ff9f43; }
 
-    /* Counter ring */
-    #counter-ring {
-      display: flex; align-items: center; justify-content: center;
-      gap: 16px; margin-bottom: 10px;
-    }
-    #touch-count {
-      font-size: 54px; font-weight: 900; line-height: 1;
-      background: linear-gradient(135deg, #f5c842, #ff9f43);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+    #counter-ring { display: flex; align-items: center; justify-content: center; gap: 16px; margin-bottom: 10px; }
+    #touch-count { font-size: 54px; font-weight: 900; line-height: 1; background: linear-gradient(135deg, #f5c842, #ff9f43); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     #count-label { font-size: 13px; color: rgba(255,255,255,0.5); }
 
-    /* Progress bar */
-    #prog-bar-wrap {
-      height: 8px; background: rgba(255,255,255,0.12);
-      border-radius: 99px; overflow: hidden;
-    }
-    #prog-bar {
-      height: 100%; width: 0%;
-      background: linear-gradient(90deg, #3ab0e2, #f5c842);
-      border-radius: 99px;
-      transition: width 0.3s ease;
-    }
+    #prog-bar-wrap { height: 8px; background: rgba(255,255,255,0.12); border-radius: 99px; overflow: hidden; }
+    #prog-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3ab0e2, #f5c842); border-radius: 99px; transition: width 0.3s ease; }
 
-    /* Touch ripple */
-    .ripple {
-      position: fixed; border-radius: 50%;
-      background: rgba(255,255,255,0.35);
-      transform: scale(0); pointer-events: none; z-index: 9;
-      animation: ripple-out 0.55s ease-out forwards;
-    }
-    @keyframes ripple-out {
-      to { transform: scale(6); opacity: 0; }
-    }
+    .bucket-pop { position: fixed; font-size: 28px; pointer-events: none; z-index: 9; animation: bucket-fly 0.8s ease-out forwards; }
+    @keyframes bucket-fly { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(0.4); opacity: 0; } }
 
-    /* Bucket emoji floating up */
-    .bucket-pop {
-      position: fixed; font-size: 28px;
-      pointer-events: none; z-index: 9;
-      animation: bucket-fly 0.8s ease-out forwards;
-    }
-    @keyframes bucket-fly {
-      0%   { transform: translateY(0) scale(1); opacity: 1; }
-      100% { transform: translateY(-80px) scale(0.4); opacity: 0; }
-    }
-
-    /* 터치 가능 영역: 전체 화면(inset:0)에서 수위 영역(bottom:0)으로 변경 */
-    #game-tap-area {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 60%; /* 기본 수위 */
-      z-index: 4;
-      -webkit-tap-highlight-color: transparent;
-    }
+    #game-tap-area { position: fixed; bottom: 0; left: 0; right: 0; height: 60%; z-index: 4; cursor: grab; }
 
     /* ===== QUIZ SCREEN ===== */
-    #screen-quiz {
-      background: linear-gradient(160deg, #0a1628 0%, #0d2137 100%);
-      gap: 20px;
-    }
-
-    .quiz-header {
-      text-align: center;
-    }
-    .quiz-step {
-      font-size: 12px; letter-spacing: 2px;
-      color: #8ecae6; margin-bottom: 6px;
-    }
-    .quiz-q {
-      font-size: clamp(17px, 5vw, 22px);
-      font-weight: 800; line-height: 1.45;
-      max-width: 360px;
-    }
-
-    .quiz-card {
-      background: rgba(255,255,255,0.07);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 20px; padding: 28px 20px;
-      width: 100%; max-width: 400px;
-    }
-
-    /* OX buttons */
-    .ox-group {
-      display: flex; gap: 16px; justify-content: center;
-      margin-top: 20px;
-    }
-    .ox-btn {
-      flex: 1; max-width: 140px;
-      padding: 18px 0; font-size: 36px;
-      border: 2px solid rgba(255,255,255,0.2);
-      border-radius: 16px; background: rgba(255,255,255,0.05);
-      color: white; cursor: pointer; font-weight: 900;
-      transition: all 0.18s;
-      -webkit-tap-highlight-color: transparent;
-    }
+    #screen-quiz { background: linear-gradient(160deg, #0a1628 0%, #0d2137 100%); gap: 20px; }
+    .quiz-header { text-align: center; }
+    .quiz-step { font-size: 12px; letter-spacing: 2px; color: #8ecae6; margin-bottom: 6px; }
+    .quiz-q { font-size: clamp(17px, 5vw, 22px); font-weight: 800; line-height: 1.45; max-width: 360px; }
+    .quiz-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px 20px; width: 100%; max-width: 400px; }
+    .ox-group { display: flex; gap: 16px; justify-content: center; margin-top: 20px; }
+    .ox-btn { flex: 1; max-width: 140px; padding: 18px 0; font-size: 36px; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; background: rgba(255,255,255,0.05); color: white; cursor: pointer; font-weight: 900; transition: all 0.18s; }
     .ox-btn:active { transform: scale(0.93); }
     .ox-btn.o-btn { border-color: #4fc3f7; color: #4fc3f7; }
     .ox-btn.x-btn { border-color: #ff7675; color: #ff7675; }
-
-    /* Subjective input */
-    .subj-group {
-      margin-top: 20px; display: flex; flex-direction: column; gap: 12px;
-    }
-    .subj-input {
-      width: 100%; padding: 14px 18px;
-      background: rgba(255,255,255,0.1);
-      border: 2px solid rgba(255,255,255,0.2);
-      border-radius: 12px; color: white;
-      font-size: 18px; font-weight: 700;
-      outline: none; text-align: center;
-      transition: border-color 0.2s;
-      -webkit-appearance: none;
-    }
-    .subj-input:focus { border-color: #f5c842; }
-    .subj-input::placeholder { color: rgba(255,255,255,0.3); font-weight: 400; }
-
-    .btn-submit {
-      background: linear-gradient(135deg, #f5c842, #ff9f43);
-      color: #1a1a1a; border: none; border-radius: 12px;
-      padding: 14px; font-size: 16px; font-weight: 800;
-      cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 0.15s;
-    }
-    .btn-submit:active { transform: scale(0.96); }
-
-    /* Hint */
-    .quiz-hint {
-      font-size: 12px; color: rgba(255,255,255,0.3);
-      text-align: center;
-    }
-
-    /* Wrong flash */
-    #wrong-overlay {
-      position: fixed; inset: 0; z-index: 20;
-      background: var(--red-flash);
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.1s;
-    }
-    #wrong-msg {
-      position: fixed; top: 50%; left: 50%;
-      transform: translate(-50%,-50%) scale(0.8);
-      z-index: 21; background: #c0392b;
-      border-radius: 16px; padding: 18px 28px;
-      text-align: center; pointer-events: none;
-      opacity: 0; transition: all 0.2s;
-      white-space: nowrap;
-    }
-    #wrong-msg.show {
-      opacity: 1; transform: translate(-50%,-50%) scale(1);
-    }
+    .subj-group { margin-top: 20px; display: flex; flex-direction: column; gap: 12px; }
+    .subj-input { width: 100%; padding: 14px 18px; background: rgba(255,255,255,0.1); border: 2px solid rgba(255,255,255,0.2); border-radius: 12px; color: white; font-size: 18px; font-weight: 700; outline: none; text-align: center; }
+    .btn-submit { background: linear-gradient(135deg, #f5c842, #ff9f43); color: #1a1a1a; border: none; border-radius: 12px; padding: 14px; font-size: 16px; font-weight: 800; cursor: pointer; }
+    
+    #wrong-overlay { position: fixed; inset: 0; z-index: 20; background: var(--red-flash); opacity: 0; pointer-events: none; transition: opacity 0.1s; }
+    #wrong-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) scale(0.8); z-index: 21; background: #c0392b; border-radius: 16px; padding: 18px 28px; text-align: center; opacity: 0; transition: all 0.2s; white-space: nowrap; }
+    #wrong-msg.show { opacity: 1; transform: translate(-50%,-50%) scale(1); }
     #wrong-msg .emoji { font-size: 30px; display: block; margin-bottom: 6px; }
-    #wrong-msg .txt   { font-size: 15px; font-weight: 700; line-height: 1.4; }
-
-    /* Progress dots */
-    .quiz-dots {
-      display: flex; gap: 8px; justify-content: center;
-    }
-    .dot {
-      width: 10px; height: 10px; border-radius: 50%;
-      background: rgba(255,255,255,0.2);
-      transition: background 0.3s;
-    }
+    
+    .quiz-dots { display: flex; gap: 8px; justify-content: center; }
+    .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); }
     .dot.done { background: #f5c842; }
     .dot.active { background: #4fc3f7; }
 
-    /* ===== ENDING SCREEN ===== */
-    #screen-end {
-      background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 40%, #7dd3fc 100%);
-      gap: 22px;
-    }
-
-    .end-sun {
-      width: 90px; height: 90px; border-radius: 50%;
-      background: radial-gradient(circle, #fff9c4, #fdd835, #f57f17);
-      box-shadow: 0 0 40px 15px rgba(253,216,53,0.5);
-      animation: sun-pulse 3s ease-in-out infinite;
-    }
-    @keyframes sun-pulse {
-      0%,100% { box-shadow: 0 0 40px 15px rgba(253,216,53,0.5); }
-      50%     { box-shadow: 0 0 60px 25px rgba(253,216,53,0.7); }
-    }
-
+    #screen-end { background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 40%, #7dd3fc 100%); gap: 22px; }
+    .end-sun { width: 90px; height: 90px; border-radius: 50%; background: radial-gradient(circle, #fff9c4, #fdd835, #f57f17); box-shadow: 0 0 40px 15px rgba(253,216,53,0.5); animation: sun-pulse 3s ease-in-out infinite; }
+    @keyframes sun-pulse { 0%,100% { box-shadow: 0 0 40px 15px rgba(253,216,53,0.5); } 50% { box-shadow: 0 0 60px 25px rgba(253,216,53,0.7); } }
     .end-boat { font-size: 64px; animation: gentle-rock 4s ease-in-out infinite; }
-    @keyframes gentle-rock {
-      0%,100% { transform: rotate(-3deg); }
-      50%     { transform: rotate( 3deg); }
-    }
-
-    .end-title {
-      text-align: center;
-    }
-    .end-title .congrats {
-      font-size: 13px; letter-spacing: 2px;
-      color: rgba(255,255,255,0.8); display: block; margin-bottom: 6px;
-    }
-    .end-title .main {
-      font-size: clamp(22px, 6vw, 30px);
-      font-weight: 900; color: #1a2a4a; line-height: 1.3;
-    }
-
-    .end-verse {
-      background: rgba(255,255,255,0.4);
-      backdrop-filter: blur(8px);
-      border-radius: 16px; padding: 18px 20px;
-      text-align: center; max-width: 360px;
-      color: #1a2a4a;
-    }
-    .end-verse .verse-text {
-      font-size: 14px; line-height: 1.75; font-style: italic; margin-bottom: 8px;
-    }
-    .end-verse .verse-ref {
-      font-size: 12px; font-weight: 700;
-      color: rgba(26,42,74,0.65);
-    }
-
-    .btn-restart {
-      background: #1a2a4a; color: #f5c842;
-      border: none; border-radius: 50px;
-      padding: 14px 40px; font-size: 16px; font-weight: 700;
-      cursor: pointer;
-      box-shadow: 0 4px 20px rgba(26,42,74,0.3);
-      -webkit-tap-highlight-color: transparent;
-      transition: transform 0.15s;
-    }
-    .btn-restart:active { transform: scale(0.95); }
-
-    /* Confetti */
-    .confetti-piece {
-      position: fixed; width: 10px; height: 14px;
-      top: -20px; border-radius: 2px;
-      animation: confetti-fall var(--cf-d) linear var(--cf-delay) infinite;
-      z-index: 0; pointer-events: none;
-    }
-    @keyframes confetti-fall {
-      0%   { transform: translateY(0) rotate(0); opacity:1; }
-      100% { transform: translateY(110vh) rotate(720deg); opacity:0; }
-    }
-
-    /* ===== WAVE DIVIDER ===== */
-    .wave-svg {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      z-index: 2; pointer-events: none; height: 80px;
-    }
-
-    /* ===== UTIL ===== */
-    .hidden { display: none !important; }
+    .end-title { text-align: center; }
+    .end-title .congrats { font-size: 13px; letter-spacing: 2px; color: rgba(255,255,255,0.8); display: block; margin-bottom: 6px; }
+    .end-title .main { font-size: clamp(22px, 6vw, 30px); font-weight: 900; color: #1a2a4a; line-height: 1.3; }
+    .end-verse { background: rgba(255,255,255,0.4); backdrop-filter: blur(8px); border-radius: 16px; padding: 18px 20px; text-align: center; max-width: 360px; color: #1a2a4a; }
+    .btn-restart { background: #1a2a4a; color: #f5c842; border: none; border-radius: 50px; padding: 14px 40px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    
+    .confetti-piece { position: fixed; width: 10px; height: 14px; top: -20px; border-radius: 2px; animation: confetti-fall var(--cf-d) linear var(--cf-delay) infinite; z-index: 0; pointer-events: none; }
+    @keyframes confetti-fall { 0% { transform: translateY(0) rotate(0); opacity:1; } 100% { transform: translateY(110vh) rotate(720deg); opacity:0; } }
   </style>
 </head>
 <body>
 
-<!-- ── Ambient Elements ── -->
 <div id="starfield"></div>
 <div id="rain-container"></div>
 <div id="lightning"></div>
 <span id="boat-icon">⛵</span>
 
-<!-- ══════════════════════════════════════
-     SCREEN 1 : INTRO
-══════════════════════════════════════ -->
 <section class="screen active" id="screen-intro">
   <div class="intro-badge">⚓ STAGE 1 of 3</div>
-
   <div class="intro-title">
     <span class="sub">갈릴리 항해사 자격시험</span>
     <span class="main">폭풍 탈출</span>
   </div>
-
   <div class="intro-verse">
     <em>"예수께서 일어나 바람을 꾸짖으시며<br>
     바다더러 이르시되 잠잠하라 고요하라 하시니<br>
     바람이 그치고 아주 잔잔하여지더라"</em><br><br>
     마가복음 4:39
   </div>
-
   <div class="user-info-form">
-    <select id="sun-select">
-      <option value="" disabled selected>순 선택</option>
-      <!-- JS로 랜덤 배치됨 -->
-    </select>
+    <select id="sun-select"><option value="" disabled selected>순 선택</option></select>
     <input type="text" id="name-input" placeholder="이름을 입력하세요" />
   </div>
-
   <button class="btn-start" id="btn-start">⚓ 항해 시작!</button>
-
   <p class="intro-scroll-hint">▼ 폭풍이 기다리고 있다 ▼</p>
 </section>
 
-<!-- ══════════════════════════════════════
-     SCREEN 2 : MINI GAME
-══════════════════════════════════════ -->
 <section class="screen" id="screen-game">
-  <!-- Tap area (수위에 맞춰 높이가 변함) -->
   <div id="game-tap-area"></div>
-
-  <!-- Water -->
   <div id="water-fill"></div>
-
-  <!-- HUD (above water) -->
   <div id="game-hud">
     <div id="game-title">🌊 물 퍼내기 미션</div>
-    <!-- 안내 문구를 '차오른 물'을 터치하라고 직관적으로 변경 -->
-    <div id="instruction">배에 물이 찹니다!<br><span>차오른 물</span>을 터치해서 퍼내세요! 🪣</div>
+    <div id="instruction">배에 물이 찹니다!<br><span>차오른 물을 위로 드래그</span>해서 퍼내세요! 🪣</div>
     <div id="counter-ring">
       <div style="text-align: center;">
         <div id="touch-count">0</div>
-        <div id="count-label">/ <span id="goal-label">60</span></div>
+        <div id="count-label">/ <span id="goal-label">30</span></div>
       </div>
     </div>
     <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
   </div>
-
-  <!-- Gentle wave on top of water -->
-  <svg class="wave-svg" viewBox="0 0 500 80" preserveAspectRatio="none" style="bottom:auto;top:0;z-index:5;pointer-events:none;opacity:0.18;">
-    <path d="M0,40 C80,80 160,0 240,40 S400,80 500,40 V0 H0Z" fill="white"/>
-  </svg>
 </section>
 
-<!-- ══════════════════════════════════════
-     SCREEN 3 : QUIZ
-══════════════════════════════════════ -->
 <section class="screen" id="screen-quiz">
-
-  <div class="quiz-dots" id="quiz-dots">
-    <div class="dot active" id="dot-0"></div>
-    <div class="dot" id="dot-1"></div>
-    <div class="dot" id="dot-2"></div>
-  </div>
-
+  <div class="quiz-dots" id="quiz-dots"></div>
   <div class="quiz-header">
-    <div class="quiz-step" id="quiz-step">문제 1 / 3</div>
-    <div class="quiz-q" id="quiz-q">Loading…</div>
+    <div class="quiz-step" id="quiz-step"></div>
+    <div class="quiz-q" id="quiz-q"></div>
   </div>
-
-  <div class="quiz-card" id="quiz-card">
-    <!-- dynamically injected -->
-  </div>
-
+  <div class="quiz-card" id="quiz-card"></div>
   <p class="quiz-hint" id="quiz-hint">⚡ 틀리면 2배의 물을 다시 퍼내야 합니다!</p>
 </section>
 
-<!-- ══════════════════════════════════════
-     SCREEN 4 : ENDING
-══════════════════════════════════════ -->
 <section class="screen" id="screen-end">
   <div class="end-sun"></div>
   <div class="end-boat">⛵</div>
-
   <div class="end-title">
     <span class="congrats">🎉 MISSION COMPLETE</span>
     <span class="main">참된 선장이신 예수님과 함께<br>안전하게 항해를 마쳤습니다!</span>
   </div>
-
   <div class="end-verse">
     <p class="verse-text">"그들이 심히 두려워하여 서로 말하되<br>
     그가 누구이기에 바람과 바다도<br>
     순종하는가 하였더라"</p>
     <p class="verse-ref">마가복음 4:41</p>
   </div>
-
   <button class="btn-restart" id="btn-restart">🔄 다시 도전하기</button>
 </section>
 
-<!-- Wrong Answer Overlay -->
 <div id="wrong-overlay"></div>
 <div id="wrong-msg">
   <span class="emoji">⛈️</span>
@@ -590,69 +316,44 @@
 </div>
 
 <script>
-/* ==========================================
-   UTILITY
-========================================== */
 const $ = id => document.getElementById(id);
-const screens = {
-  intro : $('screen-intro'),
-  game  : $('screen-game'),
-  quiz  : $('screen-quiz'),
-  end   : $('screen-end'),
-};
-const boatIcon      = $('boat-icon');
+const screens = { intro : $('screen-intro'), game : $('screen-game'), quiz : $('screen-quiz'), end : $('screen-end') };
+const boatIcon = $('boat-icon');
 const rainContainer = $('rain-container');
-const lightning     = $('lightning');
+const lightning = $('lightning');
 
 function showScreen(name) {
   Object.values(screens).forEach(s => s.classList.remove('active'));
   screens[name].classList.add('active');
 }
 
-/* ==========================================
-   STARFIELD
-========================================== */
+/* Starfield */
 (function buildStars() {
   const sf = $('starfield');
   for (let i = 0; i < 80; i++) {
     const s = document.createElement('div');
     s.className = 'star';
     const size = Math.random() * 2.5 + 1;
-    s.style.cssText = `
-      width:${size}px; height:${size}px;
-      top:${Math.random()*100}%;
-      left:${Math.random()*100}%;
-      --d:${(Math.random()*3+1).toFixed(1)}s;
-    `;
+    s.style.cssText = `width:${size}px; height:${size}px; top:${Math.random()*100}%; left:${Math.random()*100}%; --d:${(Math.random()*3+1).toFixed(1)}s;`;
     sf.appendChild(s);
   }
 })();
 
-/* ==========================================
-   RAIN & LIGHTNING
-========================================== */
+/* Rain & Lightning */
 let rainDrops = [];
 function startRain() {
   stopRain();
   for (let i = 0; i < 60; i++) {
     const d = document.createElement('div');
     d.className = 'raindrop';
-    const speed  = (Math.random() * 0.6 + 0.4).toFixed(2);
+    const speed = (Math.random() * 0.6 + 0.4).toFixed(2);
     const height = Math.random() * 60 + 30;
-    d.style.cssText = `
-      left:${Math.random()*100}%;
-      height:${height}px;
-      --s:${speed}s;
-      animation-delay:-${(Math.random()*speed).toFixed(2)}s;
-    `;
+    d.style.cssText = `left:${Math.random()*100}%; height:${height}px; --s:${speed}s; animation-delay:-${(Math.random()*speed).toFixed(2)}s;`;
     rainContainer.appendChild(d);
     rainDrops.push(d);
   }
 }
-function stopRain() {
-  rainDrops.forEach(d => d.remove());
-  rainDrops = [];
-}
+function stopRain() { rainDrops.forEach(d => d.remove()); rainDrops = []; }
 
 let lightInterval;
 function startLightning() {
@@ -664,169 +365,76 @@ function startLightning() {
   }
   flash();
 }
-function stopLightning() {
-  clearTimeout(lightInterval);
-  lightning.style.opacity = '0';
-}
+function stopLightning() { clearTimeout(lightInterval); lightning.style.opacity = '0'; }
 
-/* ==========================================
-   BOAT ROCK
-========================================== */
-function startBoatRock() {
-  boatIcon.style.display = 'block';
-  boatIcon.style.animationDuration = '1.2s';
-}
-function calmBoat() {
-  boatIcon.style.animationDuration = '4s';
-}
+/* Boat Rock */
+function startBoatRock() { boatIcon.style.display = 'block'; boatIcon.style.animationDuration = '1.2s'; }
+function calmBoat() { boatIcon.style.animationDuration = '4s'; }
 function hideBoat() { boatIcon.style.display = 'none'; }
 
-/* ==========================================
-   SCREEN: INTRO (순/이름 처리)
-========================================== */
+/* Setup */
 (function initIntro() {
-  startRain();
-  startLightning();
-  startBoatRock();
-
-  // 순 랜덤 배치 (1~13)
+  startRain(); startLightning(); startBoatRock();
   const sunSelect = $('sun-select');
   const suns = Array.from({length: 13}, (_, i) => i + 1);
-  suns.sort(() => Math.random() - 0.5); // Shuffle
-  suns.forEach(s => {
-    let opt = document.createElement('option');
-    opt.value = s + '순';
-    opt.textContent = s + '순';
-    sunSelect.appendChild(opt);
-  });
-
+  suns.sort(() => Math.random() - 0.5);
+  suns.forEach(s => { let opt = document.createElement('option'); opt.value = s + '순'; opt.textContent = s + '순'; sunSelect.appendChild(opt); });
   $('btn-start').addEventListener('click', () => {
-    if (!sunSelect.value || !$('name-input').value.trim()) {
-      alert("순과 이름을 모두 입력해주세요!");
-      return;
-    }
-    
-    // Screen shake
-    document.body.style.animation = 'none';
-    let shakeCount = 0;
-    const shakeInterval = setInterval(() => {
-      const x = (Math.random()-0.5)*12;
-      const y = (Math.random()-0.5)*6;
-      document.body.style.transform = `translate(${x}px,${y}px)`;
-      if (++shakeCount > 12) {
-        clearInterval(shakeInterval);
-        document.body.style.transform = '';
-        startGameScreen(); // 게임 시작
-      }
-    }, 60);
+    if (!sunSelect.value || !$('name-input').value.trim()) { alert("순과 이름을 모두 입력해주세요!"); return; }
+    startGameScreen();
   });
 })();
 
-/* ==========================================
-   SCREEN: MINI GAME (물 퍼내기)
-========================================== */
+/* Mini Game */
 let touchCount = 0;
-let currentGoal = 30; // 초기 목표치 30
+let currentGoal = 30; 
 
 function startGameScreen() {
   showScreen('game');
   touchCount = 0;
   $('goal-label').textContent = currentGoal;
-  
-  // 폭풍 효과 재시작 (오답 후 돌아왔을 때를 대비)
-  startRain();
-  startLightning();
-  startBoatRock();
-  
+  startRain(); startLightning(); startBoatRock();
   updateGameUI();
 }
 
 function updateGameUI() {
   $('touch-count').textContent = touchCount;
   $('prog-bar').style.width = `${(touchCount/currentGoal)*100}%`;
-  
-  // Water height: starts at 60%, reduces to ~10% at goal
   const waterH = 60 - (touchCount / currentGoal) * 50;
   $('water-fill').style.height = `${waterH}%`;
-  
-  // 💡 터치 가능 영역(game-tap-area)도 현재 수위와 동일하게 실시간으로 줄어들도록 설정!
-  // 출렁이는 물결 디자인을 고려하여 +20px 정도 여유를 둡니다.
   $('game-tap-area').style.height = `calc(${waterH}% + 20px)`; 
 }
 
-$('game-tap-area').addEventListener('click', handleTap);
-$('game-tap-area').addEventListener('touchstart', e => {
-  e.preventDefault();
-  handleTap(e.touches[0]);
-}, { passive: false });
-
-/* ==========================================
-   SCREEN: MINI GAME (드래그로 물 퍼내기)
-========================================== */
+/* Drag Logic */
 let startY = 0;
-const dragThreshold = 50; // 드래그 최소 거리 (픽셀)
+const dragThreshold = 50;
 
-$('game-tap-area').addEventListener('touchstart', (e) => {
-  startY = e.touches[0].clientY;
-}, { passive: false });
-
+$('game-tap-area').addEventListener('touchstart', (e) => { startY = e.touches[0].clientY; }, { passive: false });
 $('game-tap-area').addEventListener('touchend', (e) => {
   const endY = e.changedTouches[0].clientY;
-  const deltaY = startY - endY; // 위로 드래그하면 양수
-
-  // 위로 드래그했고, 최소 거리 이상일 때만 카운트
-  if (deltaY > dragThreshold) {
-    handleDragAction(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-  }
+  const deltaY = startY - endY;
+  if (deltaY > dragThreshold) { handleDragAction(e.changedTouches[0].clientX, e.changedTouches[0].clientY); }
 }, { passive: false });
 
 function handleDragAction(x, y) {
   if (touchCount >= currentGoal) return;
-
   touchCount++;
   updateGameUI();
-  
-  // 시각 효과: 드래그한 지점에서 버킷 튀어오름
   spawnBucket(x, y);
-
   if (touchCount >= currentGoal) {
-    setTimeout(() => {
-      stopRain();
-      stopLightning();
-      calmBoat();
-      showQuizScreen(false);
-    }, 600);
+    setTimeout(() => { stopRain(); stopLightning(); calmBoat(); showQuizScreen(false); }, 600);
   }
-}
-
-function spawnRipple(x, y) {
-  const r = document.createElement('div');
-  r.className = 'ripple';
-  const size = 60;
-  r.style.cssText = `
-    width:${size}px; height:${size}px;
-    left:${x - size/2}px; top:${y - size/2}px;
-  `;
-  document.body.appendChild(r);
-  r.addEventListener('animationend', () => r.remove());
 }
 
 function spawnBucket(x, y) {
   const b = document.createElement('div');
-  b.className = 'bucket-pop';
-  b.textContent = '🪣';
-  b.style.left = `${x - 18}px`;
-  b.style.top  = `${y - 18}px`;
+  b.className = 'bucket-pop'; b.textContent = '🪣';
+  b.style.left = `${x - 18}px`; b.style.top = `${y - 18}px`;
   document.body.appendChild(b);
   b.addEventListener('animationend', () => b.remove());
 }
 
-/* ==========================================
-   SCREEN: QUIZ
-========================================== */
-/* ==========================================
-   SCREEN: QUIZ
-========================================== */
+/* Quiz */
 const QUIZZES = [
   { type: 'ox', q: '제자들은 갈릴리 바다의 베테랑 어부였기 때문에 폭풍을 두려워하지 않았다.', answer: 'X' },
   { type: 'ox', q: '갈릴리 바다는 분지 지형이라 찬 공기가 내려오면 순식간에 예고 없는 광풍으로 변한다.', answer: 'O' },
@@ -837,15 +445,10 @@ const QUIZZES = [
   { type: 'ox', q: '믿는 사람과 믿지 않는 사람의 차이는 고난의 크기가 아니라 폭풍 속에서 \'어떤 대상을 붙드는가\'이다.', answer: 'O' },
   { type: 'ox', q: '흔들리지 않는 믿음을 발휘하기 위해서는 일상 속 작은 폭풍에서부터 예수님을 의지하는 연습이 필요하다.', answer: 'O' },
   { type: 'ox', q: '제자들은 광풍 사건을 겪은 후에도 예수님을 여전히 \'좋은 선생님\'으로만 여겼다.', answer: 'X' },
-  {
-    type: 'subj',
-    q: '예수님께서 바람과 물결을 꾸짖어 잠잠하게 하신 것은 그분이 단순한 위인이 아니라 \'이것\'임을 보여준다.',
-    contains: ['하나님', '창조주'], // 정답 처리 조건
-  },
+  { type: 'subj', q: '예수님께서 바람과 물결을 꾸짖어 잠잠하게 하신 것은 그분이 단순한 위인이 아니라 \'이것\'임을 보여준다.', contains: ['하나님', '창조주'] },
 ];
 
 let currentQ = 0;
-let wrongTimeouts = [];
 
 function showQuizScreen(resetQ = true) {
   if(resetQ) currentQ = 0;
@@ -853,7 +456,6 @@ function showQuizScreen(resetQ = true) {
   renderQuiz();
 }
 
-// 진행 상황(점)을 동적으로 생성
 function updateDots(idx) {
   const dotsContainer = $('quiz-dots');
   dotsContainer.innerHTML = '';
@@ -866,186 +468,54 @@ function updateDots(idx) {
 
 function renderQuiz() {
   const q = QUIZZES[currentQ];
-  $('quiz-step').textContent = `문제 ${currentQ + 1} / ${QUIZZES.length}`; // 수정됨
-  $('quiz-q').textContent    = q.q;
+  $('quiz-step').textContent = `문제 ${currentQ + 1} / ${QUIZZES.length}`;
+  $('quiz-q').textContent = q.q;
   updateDots(currentQ);
-
-  const card = $('quiz-card');
-  card.innerHTML = '';
-
+  const card = $('quiz-card'); card.innerHTML = '';
   if (q.type === 'ox') {
-    card.innerHTML = `
-      <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:4px;">
-        O 또는 X를 선택하세요
-      </div>
-      <div class="ox-group">
-        <button class="ox-btn o-btn" data-val="O">⭕</button>
-        <button class="ox-btn x-btn" data-val="X">❌</button>
-      </div>
-    `;
-    card.querySelectorAll('.ox-btn').forEach(btn => {
-      btn.addEventListener('click', () => checkAnswer(btn.dataset.val));
-    });
+    card.innerHTML = `<div class="ox-group"><button class="ox-btn o-btn" data-val="O">⭕</button><button class="ox-btn x-btn" data-val="X">❌</button></div>`;
+    card.querySelectorAll('.ox-btn').forEach(btn => btn.addEventListener('click', () => checkAnswer(btn.dataset.val)));
   } else {
-    card.innerHTML = `
-      <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:12px;">
-      정답을 입력해주세요 (공과 내용을 참고하세요~) ✍️
-      </div>
-      <div class="subj-group">
-        <input class="subj-input" id="subj-input" type="text" placeholder="정답 입력..." maxlength="20" />
-        <button class="btn-submit" id="btn-submit">확인 ✅</button>
-      </div>
-    `;
-    $('btn-submit').addEventListener('click', () => {
-      const val = $('subj-input').value.trim();
-      checkAnswer(val);
-    });
-    $('subj-input').addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        const val = $('subj-input').value.trim();
-        checkAnswer(val);
-      }
-    });
+    card.innerHTML = `<div class="subj-group"><input class="subj-input" id="subj-input" type="text" placeholder="정답 입력..." /><button class="btn-submit" id="btn-submit">확인 ✅</button></div>`;
+    $('btn-submit').addEventListener('click', () => checkAnswer($('subj-input').value.trim()));
   }
 }
 
 function checkAnswer(val) {
   const q = QUIZZES[currentQ];
-  let correct = false;
-
-  if (q.type === 'ox') {
-    correct = val.toUpperCase() === q.answer.toUpperCase();
-  } else if (q.contains) {
-    // 키워드(창조주, 하나님) 중 하나라도 포함되어 있으면 정답
-    correct = q.contains.some(keyword => val.includes(keyword));
-  }
-
+  let correct = (q.type === 'ox') ? (val.toUpperCase() === q.answer.toUpperCase()) : q.contains.some(k => val.includes(k));
   if (correct) {
-    updateDots(currentQ + 1);
     currentQ++;
-    if (currentQ >= QUIZZES.length) {
-      sendWebhookAndFinish();
-    } else {
-      // 정답 초록색 이펙트
-      const card = $('quiz-card');
-      card.style.borderColor = '#2ecc71';
-      card.style.boxShadow   = '0 0 20px rgba(46,204,113,0.4)';
-      setTimeout(() => {
-        card.style.borderColor = '';
-        card.style.boxShadow   = '';
-        renderQuiz();
-      }, 400);
-    }
-  } else {
-    showWrongPenalty();
-  }
+    if (currentQ >= QUIZZES.length) sendWebhookAndFinish();
+    else renderQuiz();
+  } else { showWrongPenalty(); }
 }
 
 function showWrongPenalty() {
-  const overlay = $('wrong-overlay');
-  const msg     = $('wrong-msg');
-  
-  // 페널티 적용 (클릭수 2배 증가)
   currentGoal *= 2;
   $('wrong-txt').innerHTML = `틀렸습니다! 폭풍이 강해집니다.<br>물을 <strong>${currentGoal}번</strong> 퍼내야 합니다! ⛈️`;
-
-  overlay.style.opacity = '1';
-  msg.classList.add('show');
-
-  // 카드 흔들림
-  const card = $('quiz-card');
-  card.style.animation = 'none';
-  card.style.transform = 'translateX(0)';
-  let shakes = 0;
-  const shakeIt = setInterval(() => {
-    card.style.transform = `translateX(${shakes % 2 === 0 ? -8 : 8}px)`;
-    if (++shakes > 6) { clearInterval(shakeIt); card.style.transform = ''; }
-  }, 60);
-
-  // 1.5초 후 물 퍼내기 게임(페널티)으로 다시 이동
-  setTimeout(() => { 
-    overlay.style.opacity = '0'; 
-    msg.classList.remove('show');
-    startGameScreen(); 
-  }, 1800);
+  $('wrong-overlay').style.opacity = '1'; $('wrong-msg').classList.add('show');
+  setTimeout(() => { $('wrong-overlay').style.opacity = '0'; $('wrong-msg').classList.remove('show'); startGameScreen(); }, 1800);
 }
 
 function sendWebhookAndFinish() {
-  const selectedSun = $('sun-select').value;
-  const userName = $('name-input').value.trim();
-  
-  const payload = {
-    "과": "1과",
-    "순": selectedSun,
-    "이름": userName
-  };
-
-  // Google Apps Script로 POST 전송
+  const payload = { "과": "1과", "순": $('sun-select').value, "이름": $('name-input').value.trim() };
   fetch("https://script.google.com/macros/s/AKfycbyTs7CZtVqTwXbftQJxW76NxXzXvzTTyJfULKqsRyjczf_TqerBxz4Yv5_9QQSjLSveIg/exec", {
-    method: "POST",
-    mode: "no-cors",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(payload)
-  }).then(() => {
-    console.log("데이터 전송 완료");
-  }).catch(e => {
-    console.error("데이터 전송 오류:", e);
+    method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
   });
-
-  showEndScreen();
-}
-
-/* ==========================================
-   SCREEN: ENDING
-========================================== */
-function showEndScreen() {
-  stopRain();
-  stopLightning();
-  hideBoat();
   showScreen('end');
   launchConfetti();
 }
 
-const CONFETTI_COLORS = ['#f5c842','#ff9f43','#ff7675','#74b9ff','#55efc4','#fd79a8','#a29bfe'];
-let confettiPieces = [];
 function launchConfetti() {
-  confettiPieces.forEach(p => p.remove());
-  confettiPieces = [];
   for (let i = 0; i < 55; i++) {
-    const p = document.createElement('div');
-    p.className = 'confetti-piece';
-    const dur   = (Math.random()*2 + 2).toFixed(1);
-    const delay = (Math.random()*3).toFixed(1);
-    p.style.cssText = `
-      left:${Math.random()*100}%;
-      background:${CONFETTI_COLORS[Math.floor(Math.random()*CONFETTI_COLORS.length)]};
-      --cf-d:${dur}s; --cf-delay:${delay}s;
-      transform:rotate(${Math.random()*360}deg);
-    `;
+    const p = document.createElement('div'); p.className = 'confetti-piece';
+    p.style.cssText = `left:${Math.random()*100}%; background:${['#f5c842','#ff9f43','#ff7675','#74b9ff'][Math.floor(Math.random()*4)]}; --cf-d:${(Math.random()*2+2).toFixed(1)}s; --cf-delay:${(Math.random()*3).toFixed(1)}s;`;
     document.body.appendChild(p);
-    confettiPieces.push(p);
   }
 }
 
-$('btn-restart').addEventListener('click', () => {
-  confettiPieces.forEach(p => p.remove());
-  confettiPieces = [];
-  
-  // 리셋 시 목표 초기화
-  currentGoal = 60;
-  touchCount = 0;
-  currentQ = 0;
-
-  stopRain();
-  startRain();
-  startLightning();
-  startBoatRock();
-  boatIcon.style.display = 'block';
-  
-  showScreen('intro');
-});
+$('btn-restart').addEventListener('click', () => { location.reload(); });
 </script>
 </body>
 </html>
