@@ -8,6 +8,12 @@
     /* ===== RESET & BASE ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+    /* 드래그 시 텍스트 파랗게 선택되는 현상 방지 */
+    body {
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
     :root {
       --storm-dark:  #0a0e1a;
       --storm-blue:  #1a2a4a;
@@ -27,7 +33,8 @@
       font-family: var(--font-main);
       background: var(--storm-dark);
       color: var(--white);
-      touch-action: manipulation;
+      /* 제스처 방해 금지 */
+      touch-action: none;
     }
 
     /* ===== SCREEN SYSTEM ===== */
@@ -198,6 +205,7 @@
       position: fixed; top: 0; left: 0; right: 0;
       z-index: 10; padding: 20px 20px 12px;
       background: linear-gradient(to bottom, rgba(10,14,26,0.95) 60%, transparent);
+      pointer-events: none; /* 드래그 방해 안하도록 */
     }
 
     #game-title {
@@ -238,17 +246,6 @@
       transition: width 0.3s ease;
     }
 
-    /* Touch ripple */
-    .ripple {
-      position: fixed; border-radius: 50%;
-      background: rgba(255,255,255,0.35);
-      transform: scale(0); pointer-events: none; z-index: 9;
-      animation: ripple-out 0.55s ease-out forwards;
-    }
-    @keyframes ripple-out {
-      to { transform: scale(6); opacity: 0; }
-    }
-
     /* Bucket emoji floating up */
     .bucket-pop {
       position: fixed; font-size: 28px;
@@ -260,121 +257,92 @@
       100% { transform: translateY(-80px) scale(0.4); opacity: 0; }
     }
 
+    /* 드래그 가능 영역 (전체 화면 설정 후 마우스 위치 계산) */
     #game-tap-area {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      height: 60%; 
-      z-index: 4;
+      position: fixed; inset: 0;
+      z-index: 4; cursor: grab;
+      touch-action: none; /* 브라우저 스크롤 방지 */
       -webkit-tap-highlight-color: transparent;
     }
+    #game-tap-area:active { cursor: grabbing; }
 
     /* ===== QUIZ SCREEN ===== */
     #screen-quiz {
-      background: #0a0e1a; /* 이미지처럼 단색의 깨끗한 배경 */
-      gap: 0;
+      background: linear-gradient(160deg, #0a1628 0%, #0d2137 100%);
+      gap: 20px;
     }
 
-    /* 퀴즈 UI 중앙 정렬 레이아웃 */
-    .quiz-container {
-      width: 100%;
-      max-width: 480px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-
-    /* 상단 텍스트(문제 번호, 질문)는 왼쪽 정렬 */
     .quiz-header {
-      width: 100%;
-      text-align: left; 
-      margin-bottom: 12px;
+      text-align: center;
     }
     .quiz-step {
-      font-size: 14px;
-      color: #ddd;
-      margin-bottom: 6px;
+      font-size: 12px; letter-spacing: 2px;
+      color: #8ecae6; margin-bottom: 6px;
     }
     .quiz-q {
-      font-size: 16px;
-      font-weight: normal;
-      line-height: 1.4;
-      color: #fff;
-      word-break: keep-all;
+      font-size: clamp(17px, 5vw, 22px);
+      font-weight: 800; line-height: 1.45;
+      max-width: 360px;
     }
 
     .quiz-card {
-      width: 100%;
-      display: flex;
-      justify-content: center;
-      margin-bottom: 12px;
+      background: rgba(255,255,255,0.07);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px; padding: 28px 20px;
+      width: 100%; max-width: 400px;
     }
 
-    /* OX 버튼 (이미지와 같이 깔끔한 작은 정사각형) */
+    /* OX buttons 복구된 예쁜 UI */
     .ox-group {
-      display: flex;
-      gap: 6px;
+      display: flex; gap: 16px; justify-content: center;
+      margin-top: 20px;
     }
     .ox-btn {
-      width: 36px;
-      height: 36px;
-      font-size: 18px;
-      background: #fff;
-      border: 1px solid #999;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      flex: 1; max-width: 140px;
+      padding: 18px 0; font-size: 36px;
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 16px; background: rgba(255,255,255,0.05);
+      color: white; cursor: pointer; font-weight: 900;
+      transition: all 0.18s;
       -webkit-tap-highlight-color: transparent;
-      padding: 0;
+      display: flex; align-items: center; justify-content: center;
     }
-    .ox-btn:active { background: #eee; transform: scale(0.95); }
+    .ox-btn:active { transform: scale(0.93); }
+    .ox-btn.o-btn { border-color: #4fc3f7; color: #4fc3f7; }
+    .ox-btn.x-btn { border-color: #ff7675; color: #ff7675; }
 
-    /* 주관식 입력 */
+    /* Subjective input */
     .subj-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
+      margin-top: 20px; display: flex; flex-direction: column; gap: 12px;
     }
     .subj-input {
-      width: 220px;
-      padding: 10px;
-      background: #fff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      color: #000;
-      font-size: 16px;
-      outline: none;
-      text-align: center;
+      width: 100%; padding: 14px 18px;
+      background: rgba(255,255,255,0.1);
+      border: 2px solid rgba(255,255,255,0.2);
+      border-radius: 12px; color: white;
+      font-size: 18px; font-weight: 700;
+      outline: none; text-align: center;
+      transition: border-color 0.2s;
       -webkit-appearance: none;
     }
     .subj-input:focus { border-color: #f5c842; }
+    .subj-input::placeholder { color: rgba(255,255,255,0.3); font-weight: 400; }
 
     .btn-submit {
-      padding: 8px 24px;
       background: linear-gradient(135deg, #f5c842, #ff9f43);
-      color: #1a1a1a;
-      border: none;
-      border-radius: 6px;
-      font-size: 14px;
-      font-weight: 800;
+      color: #1a1a1a; border: none; border-radius: 12px;
+      padding: 14px; font-size: 16px; font-weight: 800;
       cursor: pointer;
       -webkit-tap-highlight-color: transparent;
       transition: transform 0.15s;
     }
-    .btn-submit:active { transform: scale(0.95); }
+    .btn-submit:active { transform: scale(0.96); }
 
-    /* 하단 힌트 텍스트 */
+    /* Hint */
     .quiz-hint {
-      font-size: 14px;
-      color: #fff;
+      font-size: 12px; color: rgba(255,255,255,0.3);
       text-align: center;
-      margin-top: 4px;
     }
-
-    /* 진행 점(dot)은 이미지에 없으므로 숨김 처리하여 디자인 일치 */
-    .quiz-dots { display: none; }
 
     /* Wrong flash */
     #wrong-overlay {
@@ -398,11 +366,24 @@
     #wrong-msg .emoji { font-size: 30px; display: block; margin-bottom: 6px; }
     #wrong-msg .txt   { font-size: 15px; font-weight: 700; line-height: 1.4; }
 
+    /* Progress dots: 10개 대응 flex-wrap 추가 */
+    .quiz-dots {
+      display: flex; gap: 6px; justify-content: center; flex-wrap: wrap; max-width: 200px;
+    }
+    .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      transition: background 0.3s;
+    }
+    .dot.done { background: #f5c842; }
+    .dot.active { background: #4fc3f7; }
+
     /* ===== ENDING SCREEN ===== */
     #screen-end {
       background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 40%, #7dd3fc 100%);
       gap: 22px;
     }
+
     .end-sun {
       width: 90px; height: 90px; border-radius: 50%;
       background: radial-gradient(circle, #fff9c4, #fdd835, #f57f17);
@@ -413,12 +394,16 @@
       0%,100% { box-shadow: 0 0 40px 15px rgba(253,216,53,0.5); }
       50%     { box-shadow: 0 0 60px 25px rgba(253,216,53,0.7); }
     }
+
     .end-boat { font-size: 64px; animation: gentle-rock 4s ease-in-out infinite; }
     @keyframes gentle-rock {
       0%,100% { transform: rotate(-3deg); }
       50%     { transform: rotate( 3deg); }
     }
-    .end-title { text-align: center; }
+
+    .end-title {
+      text-align: center;
+    }
     .end-title .congrats {
       font-size: 13px; letter-spacing: 2px;
       color: rgba(255,255,255,0.8); display: block; margin-bottom: 6px;
@@ -427,6 +412,7 @@
       font-size: clamp(22px, 6vw, 30px);
       font-weight: 900; color: #1a2a4a; line-height: 1.3;
     }
+
     .end-verse {
       background: rgba(255,255,255,0.4);
       backdrop-filter: blur(8px);
@@ -441,6 +427,7 @@
       font-size: 12px; font-weight: 700;
       color: rgba(26,42,74,0.65);
     }
+
     .btn-restart {
       background: #1a2a4a; color: #f5c842;
       border: none; border-radius: 50px;
@@ -487,19 +474,16 @@
 ══════════════════════════════════════ -->
 <section class="screen active" id="screen-intro">
   <div class="intro-badge">⚓ STAGE 1 of 3</div>
-
   <div class="intro-title">
     <span class="sub">갈릴리 항해사 자격시험</span>
     <span class="main">폭풍 탈출</span>
   </div>
-
   <div class="intro-verse">
     <em>"예수께서 일어나 바람을 꾸짖으시며<br>
     바다더러 이르시되 잠잠하라 고요하라 하시니<br>
     바람이 그치고 아주 잔잔하여지더라"</em><br><br>
     마가복음 4:39
   </div>
-
   <div class="user-info-form">
     <select id="sun-select">
       <option value="" disabled selected>순 선택</option>
@@ -507,9 +491,7 @@
     </select>
     <input type="text" id="name-input" placeholder="이름을 입력하세요" />
   </div>
-
   <button class="btn-start" id="btn-start">⚓ 항해 시작!</button>
-
   <p class="intro-scroll-hint">▼ 폭풍이 기다리고 있다 ▼</p>
 </section>
 
@@ -517,19 +499,23 @@
      SCREEN 2 : MINI GAME
 ══════════════════════════════════════ -->
 <section class="screen" id="screen-game">
+  <!-- Tap/Drag area -->
   <div id="game-tap-area"></div>
+  <!-- Water -->
   <div id="water-fill"></div>
+  <!-- HUD (above water) -->
   <div id="game-hud">
     <div id="game-title">🌊 물 퍼내기 미션</div>
-    <div id="instruction">배에 물이 찹니다!<br><span>차오른 물</span>을 터치해서 퍼내세요! 🪣</div>
+    <div id="instruction">배에 물이 찹니다!<br><span>물 안에서 밖으로</span> 드래그해서 퍼내세요! 🪣</div>
     <div id="counter-ring">
       <div style="text-align: center;">
         <div id="touch-count">0</div>
-        <div id="count-label">/ <span id="goal-label">60</span></div>
+        <div id="count-label">/ <span id="goal-label">30</span></div>
       </div>
     </div>
     <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
   </div>
+  <!-- Gentle wave on top of water -->
   <svg class="wave-svg" viewBox="0 0 500 80" preserveAspectRatio="none" style="bottom:auto;top:0;z-index:5;pointer-events:none;opacity:0.18;">
     <path d="M0,40 C80,80 160,0 240,40 S400,80 500,40 V0 H0Z" fill="white"/>
   </svg>
@@ -539,21 +525,17 @@
      SCREEN 3 : QUIZ
 ══════════════════════════════════════ -->
 <section class="screen" id="screen-quiz">
-  <div class="quiz-container">
-    <!-- JS 오류 방지용 히든 요소 -->
-    <div class="quiz-dots hidden" id="quiz-dots"></div>
-    
-    <div class="quiz-header">
-      <div class="quiz-step" id="quiz-step">문제 1 / 10</div>
-      <div class="quiz-q" id="quiz-q">Loading…</div>
-    </div>
-
-    <div class="quiz-card" id="quiz-card">
-      <!-- dynamically injected -->
-    </div>
-
-    <p class="quiz-hint" id="quiz-hint">⚡ 틀리면 2배의 물을 다시 퍼내야 합니다!</p>
+  <div class="quiz-dots" id="quiz-dots">
+    <!-- dynamically injected -->
   </div>
+  <div class="quiz-header">
+    <div class="quiz-step" id="quiz-step">문제 1 / 10</div>
+    <div class="quiz-q" id="quiz-q">Loading…</div>
+  </div>
+  <div class="quiz-card" id="quiz-card">
+    <!-- dynamically injected -->
+  </div>
+  <p class="quiz-hint" id="quiz-hint">⚡ 틀리면 2배의 물을 다시 퍼내야 합니다!</p>
 </section>
 
 <!-- ══════════════════════════════════════
@@ -562,19 +544,16 @@
 <section class="screen" id="screen-end">
   <div class="end-sun"></div>
   <div class="end-boat">⛵</div>
-
   <div class="end-title">
     <span class="congrats">🎉 MISSION COMPLETE</span>
     <span class="main">참된 선장이신 예수님과 함께<br>안전하게 항해를 마쳤습니다!</span>
   </div>
-
   <div class="end-verse">
     <p class="verse-text">"그들이 심히 두려워하여 서로 말하되<br>
     그가 누구이기에 바람과 바다도<br>
     순종하는가 하였더라"</p>
     <p class="verse-ref">마가복음 4:41</p>
   </div>
-
   <button class="btn-restart" id="btn-restart">🔄 다시 도전하기</button>
 </section>
 
@@ -687,7 +666,7 @@ function hideBoat() { boatIcon.style.display = 'none'; }
 
   const sunSelect = $('sun-select');
   const suns = Array.from({length: 13}, (_, i) => i + 1);
-  suns.sort(() => Math.random() - 0.5);
+  suns.sort(() => Math.random() - 0.5); // Shuffle
   suns.forEach(s => {
     let opt = document.createElement('option');
     opt.value = s + '순';
@@ -717,10 +696,12 @@ function hideBoat() { boatIcon.style.display = 'none'; }
 })();
 
 /* ==========================================
-   SCREEN: MINI GAME
+   SCREEN: MINI GAME (PC/Mobile 드래그)
 ========================================== */
 let touchCount = 0;
-let currentGoal = 60;
+let currentGoal = 30; // 초기 목표치 30
+let isDragging = false;
+let startInWater = false;
 
 function startGameScreen() {
   showScreen('game');
@@ -740,23 +721,52 @@ function updateGameUI() {
   
   const waterH = 60 - (touchCount / currentGoal) * 50;
   $('water-fill').style.height = `${waterH}%`;
-  
-  $('game-tap-area').style.height = `calc(${waterH}% + 20px)`; 
 }
 
-$('game-tap-area').addEventListener('click', handleTap);
-$('game-tap-area').addEventListener('touchstart', e => {
-  e.preventDefault();
-  handleTap(e.touches[0]);
-}, { passive: false });
+// 현재 수위의 Y좌표(픽셀)를 구하는 함수
+function getWaterLine() {
+  const waterH = parseFloat($('water-fill').style.height) || 60;
+  return window.innerHeight * (1 - waterH / 100);
+}
 
-function handleTap(e) {
+const tapArea = $('game-tap-area');
+
+function onStart(e) {
+  // 모바일/PC 이벤트 통합
+  const y = e.touches ? e.touches[0].clientY : e.clientY;
+  isDragging = true;
+  // 클릭한 시작점이 물 안(경계선 아래)인지 확인
+  startInWater = y > getWaterLine();
+}
+
+function onEnd(e) {
+  if (!isDragging) return;
+  const y = e.changedTouches ? e.changedTouches[0].clientY : e.clientY;
+  const x = e.changedTouches ? e.changedTouches[0].clientX : e.clientX;
+  
+  // 끝난 지점이 물 밖(경계선 위)인지 확인
+  const isEndOutOfWater = y < getWaterLine();
+
+  if (startInWater && isEndOutOfWater) {
+    handleSuccess(x, y);
+  }
+  isDragging = false;
+  startInWater = false;
+}
+
+function handleSuccess(x, y) {
   if (touchCount >= currentGoal) return;
 
   touchCount++;
   updateGameUI();
-  spawnRipple(e.clientX, e.clientY);
-  spawnBucket(e.clientX, e.clientY);
+  
+  const b = document.createElement('div');
+  b.className = 'bucket-pop';
+  b.textContent = '🪣';
+  b.style.left = `${x - 18}px`;
+  b.style.top  = `${y - 18}px`;
+  document.body.appendChild(b);
+  b.addEventListener('animationend', () => b.remove());
 
   if (touchCount >= currentGoal) {
     setTimeout(() => {
@@ -768,27 +778,11 @@ function handleTap(e) {
   }
 }
 
-function spawnRipple(x, y) {
-  const r = document.createElement('div');
-  r.className = 'ripple';
-  const size = 60;
-  r.style.cssText = `
-    width:${size}px; height:${size}px;
-    left:${x - size/2}px; top:${y - size/2}px;
-  `;
-  document.body.appendChild(r);
-  r.addEventListener('animationend', () => r.remove());
-}
-
-function spawnBucket(x, y) {
-  const b = document.createElement('div');
-  b.className = 'bucket-pop';
-  b.textContent = '🪣';
-  b.style.left = `${x - 18}px`;
-  b.style.top  = `${y - 18}px`;
-  document.body.appendChild(b);
-  b.addEventListener('animationend', () => b.remove());
-}
+// 이벤트 리스너: 마우스(PC) & 터치(모바일) 둘 다 지원
+tapArea.addEventListener('mousedown', onStart);
+window.addEventListener('mouseup', onEnd);
+tapArea.addEventListener('touchstart', onStart, { passive: false });
+window.addEventListener('touchend', onEnd);
 
 /* ==========================================
    SCREEN: QUIZ
@@ -803,15 +797,19 @@ const QUIZZES = [
   { type: 'ox', q: '믿는 사람과 믿지 않는 사람의 차이는 고난의 크기가 아니라 폭풍 속에서 \'어떤 대상을 붙드는가\'이다.', answer: 'O' },
   { type: 'ox', q: '흔들리지 않는 믿음을 발휘하기 위해서는 일상 속 작은 폭풍에서부터 예수님을 의지하는 연습이 필요하다.', answer: 'O' },
   { type: 'ox', q: '제자들은 광풍 사건을 겪은 후에도 예수님을 여전히 \'좋은 선생님\'으로만 여겼다.', answer: 'X' },
-  { type: 'subj', q: '예수님께서 바람과 물결을 꾸짖어 잠잠하게 하신 것은 그분이 단순한 위인이 아니라 \'이것\'임을 보여준다.', contains: ['하나님', '창조주'] },
+  {
+    type: 'subj',
+    q: '예수님께서 바람과 물결을 꾸짖어 잠잠하게 하신 것은 그분이 단순한 위인이 아니라 \'이것\'임을 보여준다.',
+    contains: ['하나님', '창조주'], // 정답 처리 조건
+  },
 ];
 
 let currentQ = 0;
-let isQuizProcessing = false; // 여러번 클릭되는 버그 방지용 변수(Lock)
+let isProcessingAnswer = false; // 중복 클릭(연타) 방지용 플래그
 
 function showQuizScreen(resetQ = true) {
-  isQuizProcessing = false; // 화면 시작할 때 Lock 초기화
   if(resetQ) currentQ = 0;
+  isProcessingAnswer = false; // 게임 진입시 잠금 해제
   showScreen('quiz');
   renderQuiz();
 }
@@ -833,13 +831,17 @@ function renderQuiz() {
   updateDots(currentQ);
 
   const card = $('quiz-card');
-  card.innerHTML = '';
+  card.innerHTML = ''; // 초기화
 
+  // 예쁜 UI 코드로 복구
   if (q.type === 'ox') {
     card.innerHTML = `
+      <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:12px;">
+        O 또는 X를 선택하세요
+      </div>
       <div class="ox-group">
-        <button class="ox-btn" data-val="O">⭕</button>
-        <button class="ox-btn" data-val="X">❌</button>
+        <button class="ox-btn o-btn" data-val="O">⭕</button>
+        <button class="ox-btn x-btn" data-val="X">❌</button>
       </div>
     `;
     card.querySelectorAll('.ox-btn').forEach(btn => {
@@ -847,28 +849,30 @@ function renderQuiz() {
     });
   } else {
     card.innerHTML = `
+      <div style="text-align:center;font-size:13px;color:rgba(255,255,255,0.45);margin-bottom:12px;">
+      정답을 입력해주세요 (공과 내용을 참고하세요~) ✍️
+      </div>
       <div class="subj-group">
         <input class="subj-input" id="subj-input" type="text" placeholder="정답 입력..." maxlength="20" />
-        <button class="btn-submit" id="btn-submit">확인</button>
+        <button class="btn-submit" id="btn-submit">확인 ✅</button>
       </div>
     `;
     $('btn-submit').addEventListener('click', () => {
       const val = $('subj-input').value.trim();
-      if(val) checkAnswer(val);
+      checkAnswer(val);
     });
     $('subj-input').addEventListener('keydown', e => {
       if (e.key === 'Enter') {
         const val = $('subj-input').value.trim();
-        if(val) checkAnswer(val);
+        checkAnswer(val);
       }
     });
   }
 }
 
 function checkAnswer(val) {
-  // 이미 진행 중이면 중복 클릭 무시(Lock)
-  if (isQuizProcessing) return; 
-  isQuizProcessing = true;
+  if (isProcessingAnswer) return; // 이미 처리중이면 무시 (연타 방지)
+  isProcessingAnswer = true; // 처리 시작(잠금)
 
   const q = QUIZZES[currentQ];
   let correct = false;
@@ -885,10 +889,15 @@ function checkAnswer(val) {
     if (currentQ >= QUIZZES.length) {
       sendWebhookAndFinish();
     } else {
+      const card = $('quiz-card');
+      card.style.borderColor = '#2ecc71';
+      card.style.boxShadow   = '0 0 20px rgba(46,204,113,0.4)';
       setTimeout(() => {
-        isQuizProcessing = false; // Lock 해제
+        card.style.borderColor = '';
+        card.style.boxShadow   = '';
         renderQuiz();
-      }, 300); // 딜레이를 짧게 주어 자연스럽게 다음 문제로 넘어감
+        isProcessingAnswer = false; // 새 렌더링 시 잠금 해제
+      }, 400);
     }
   } else {
     showWrongPenalty();
@@ -896,31 +905,32 @@ function checkAnswer(val) {
 }
 
 function showWrongPenalty() {
+  const overlay = $('wrong-overlay');
+  const msg     = $('wrong-msg');
+  
   // 페널티 적용 (클릭수 2배 증가)
   currentGoal *= 2;
   $('wrong-txt').innerHTML = `틀렸습니다! 폭풍이 강해집니다.<br>물을 <strong>${currentGoal}번</strong> 퍼내야 합니다! ⛈️`;
 
-  const overlay = $('wrong-overlay');
-  const msg     = $('wrong-msg');
   overlay.style.opacity = '1';
   msg.classList.add('show');
 
-  // 화면 흔들림 효과
-  const container = document.querySelector('.quiz-container');
-  container.style.animation = 'none';
-  container.style.transform = 'translateX(0)';
+  // 카드 흔들림
+  const card = $('quiz-card');
+  card.style.animation = 'none';
+  card.style.transform = 'translateX(0)';
   let shakes = 0;
   const shakeIt = setInterval(() => {
-    container.style.transform = `translateX(${shakes % 2 === 0 ? -8 : 8}px)`;
-    if (++shakes > 6) { clearInterval(shakeIt); container.style.transform = ''; }
+    card.style.transform = `translateX(${shakes % 2 === 0 ? -8 : 8}px)`;
+    if (++shakes > 6) { clearInterval(shakeIt); card.style.transform = ''; }
   }, 60);
 
-  // 1.5초 후 물 퍼내기 게임으로 다시 이동
+  // 1.5초 후 물 퍼내기 게임(페널티)으로 다시 이동
   setTimeout(() => { 
     overlay.style.opacity = '0'; 
     msg.classList.remove('show');
-    isQuizProcessing = false; // Lock 해제
     startGameScreen(); 
+    isProcessingAnswer = false; // 다시 게임에 진입한 후 잠금 해제
   }, 1800);
 }
 
@@ -986,10 +996,10 @@ $('btn-restart').addEventListener('click', () => {
   confettiPieces.forEach(p => p.remove());
   confettiPieces = [];
   
-  // 리셋 시 목표 초기화
-  currentGoal = 60;
+  currentGoal = 30; // 초기 목표 리셋
   touchCount = 0;
   currentQ = 0;
+  isProcessingAnswer = false;
 
   stopRain();
   startRain();
