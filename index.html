@@ -5,65 +5,88 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>갈릴리 항해사 자격시험: 폭풍 탈출</title>
   <style>
+    /* ===== RESET & BASE ===== */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    :root { --storm-dark: #0a0e1a; --white: #ffffff; --gold: #f5c842; --red-flash: rgba(200,0,0,0.55); }
-    html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'Segoe UI', sans-serif; background: var(--storm-dark); color: var(--white); touch-action: none; -webkit-user-select: none; user-select: none; }
+    :root {
+      --storm-dark:  #0a0e1a;
+      --storm-blue:  #1a2a4a;
+      --gold:        #f5c842;
+      --white:       #ffffff;
+      --red-flash:   rgba(200,0,0,0.55);
+      --font-main:   'Segoe UI', 'Apple SD Gothic Neo', sans-serif;
+    }
+    html, body {
+      width: 100%; height: 100%; overflow: hidden;
+      font-family: var(--font-main); background: var(--storm-dark);
+      color: var(--white); touch-action: none; user-select: none;
+    }
 
-    .screen { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 24px 20px; opacity: 0; pointer-events: none; transition: opacity 0.6s ease; z-index: 1; }
+    /* ===== SCREEN SYSTEM ===== */
+    .screen {
+      position: fixed; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; padding: 24px 20px;
+      opacity: 0; pointer-events: none; transition: opacity 0.6s ease; z-index: 1;
+    }
     .screen.active { opacity: 1; pointer-events: all; }
 
-    #starfield { position: fixed; inset: 0; z-index: 0; pointer-events: none; }
-    .star { position: absolute; border-radius: 50%; background: white; animation: twinkle var(--d) infinite alternate; }
-    @keyframes twinkle { from { opacity: 0.2; } to { opacity: 1; } }
+    /* ===== GAME ELEMENTS ===== */
+    #water-fill {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 60%;
+      background: linear-gradient(to bottom, #1e90ff88, #0057b8cc);
+      transition: height 0.35s cubic-bezier(0.25,0.46,0.45,0.94);
+      z-index: 3; overflow: hidden;
+    }
+    #game-tap-area {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 60%;
+      z-index: 4; cursor: grab; touch-action: none;
+    }
+    #game-tap-area:active { cursor: grabbing; }
 
-    #lightning { position: fixed; inset: 0; z-index: 2; pointer-events: none; opacity: 0; background: rgba(255,255,255,0.18); }
-    #rain-container { position: fixed; inset: 0; z-index: 2; pointer-events: none; }
-    .raindrop { position: absolute; top: -20px; width: 2px; border-radius: 2px; background: linear-gradient(to bottom, transparent, #8ecae6); animation: fall var(--s) linear infinite; opacity: 0.7; }
-    @keyframes fall { to { transform: translateY(110vh); } }
+    /* HUD & UI */
+    #game-hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 20px 20px 12px; background: linear-gradient(to bottom, rgba(10,14,26,0.95) 60%, transparent); }
+    #instruction { font-size: 15px; font-weight: 700; text-align: center; color: #fff; margin-bottom: 12px; }
+    #instruction span { color: #ff9f43; }
+    #touch-count { font-size: 54px; font-weight: 900; background: linear-gradient(135deg, #f5c842, #ff9f43); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    #prog-bar-wrap { height: 8px; background: rgba(255,255,255,0.12); border-radius: 99px; overflow: hidden; }
+    #prog-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #3ab0e2, #f5c842); border-radius: 99px; transition: width 0.3s ease; }
 
-    #boat-icon { position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%); font-size: 52px; z-index: 3; pointer-events: none; animation: rock 2s ease-in-out infinite; }
-    @keyframes rock { 0%,100% { transform: translateX(-50%) rotate(-8deg); } 50% { transform: translateX(-50%) rotate(8deg); } }
-
-    /* Intro */
-    #screen-intro { gap: 18px; }
-    .intro-title { text-align: center; }
-    .intro-title .main { font-size: 42px; font-weight: 900; background: linear-gradient(135deg, #f5c842, #ff9f43); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .user-info-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 260px; }
-    .user-info-form select, .user-info-form input { padding: 12px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; color: white; text-align: center; }
-    .btn-start { background: linear-gradient(135deg, #f5c842, #ff9f43); color: #1a1a1a; border: none; border-radius: 50px; padding: 16px 48px; font-size: 18px; font-weight: 800; cursor: pointer; }
-
-    /* Game */
-    #water-fill { position: fixed; bottom: 0; left: 0; right: 0; height: 60%; background: linear-gradient(to bottom, #1e90ff88, #0057b8cc); transition: height 0.35s ease; z-index: 3; }
-    #game-hud { position: fixed; top: 0; left: 0; right: 0; z-index: 10; padding: 20px; background: linear-gradient(to bottom, rgba(10,14,26,0.95), transparent); }
-    /* 게임 전체 화면을 감싸서 드래그가 끊기지 않게 함 */
-    #game-tap-area { position: fixed; inset: 0; z-index: 4; touch-action: none; }
+    /* Animations & Misc */
     .bucket-pop { position: fixed; font-size: 28px; pointer-events: none; z-index: 9; animation: bucket-fly 0.8s ease-out forwards; }
     @keyframes bucket-fly { 0% { transform: translateY(0) scale(1); opacity: 1; } 100% { transform: translateY(-80px) scale(0.4); opacity: 0; } }
-
-    /* Quiz */
-    #screen-quiz { background: linear-gradient(160deg, #0a1628 0%, #0d2137 100%); gap: 20px; }
-    .quiz-card { background: rgba(255,255,255,0.07); border-radius: 20px; padding: 28px 20px; width: 100%; max-width: 400px; }
-    .ox-btn { padding: 18px 40px; font-size: 36px; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; background: rgba(255,255,255,0.05); color: white; }
-    .subj-input { width: 100%; padding: 14px; border-radius: 12px; background: rgba(255,255,255,0.1); color: white; border: none; text-align: center; }
     
-    #wrong-overlay { position: fixed; inset: 0; z-index: 20; background: var(--red-flash); opacity: 0; pointer-events: none; transition: opacity 0.1s; }
-    #wrong-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 21; background: #c0392b; padding: 20px; border-radius: 16px; opacity: 0; transition: all 0.2s; pointer-events: none; }
+    /* 기존 스타일 유지 (Intro, Quiz, End 등 생략) */
+    .user-info-form { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 260px; margin-top: 5px; }
+    .user-info-form select, .user-info-form input { padding: 12px 16px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.3); border-radius: 12px; color: white; text-align: center; }
+    .btn-start { background: linear-gradient(135deg, #f5c842, #ff9f43); color: #1a1a1a; padding: 16px 48px; border-radius: 50px; font-weight: 800; cursor: pointer; border:none; }
+    
+    #screen-intro { background: transparent; gap: 18px; }
+    .intro-title .main { font-size: clamp(28px, 8vw, 42px); font-weight: 900; background: linear-gradient(135deg, #f5c842, #ff9f43, #ee5a24); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .intro-verse { background: rgba(255,255,255,0.07); border-left: 3px solid #f5c842; padding: 14px 16px; font-size: 13.5px; color: #cde8f7; max-width: 340px; text-align: center; }
+    
+    #screen-quiz { background: linear-gradient(160deg, #0a1628 0%, #0d2137 100%); gap: 20px; }
+    .quiz-card { background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12); border-radius: 20px; padding: 28px 20px; width: 100%; max-width: 400px; }
+    .ox-group { display: flex; gap: 16px; justify-content: center; margin-top: 20px; }
+    .ox-btn { padding: 18px 40px; font-size: 36px; border: 2px solid rgba(255,255,255,0.2); border-radius: 16px; background: rgba(255,255,255,0.05); color: white; cursor: pointer; }
+    .btn-submit { background: linear-gradient(135deg, #f5c842, #ff9f43); color: #1a1a1a; padding: 14px; border-radius: 12px; border:none; font-weight: 800; cursor: pointer; }
+    
+    #wrong-overlay { position: fixed; inset: 0; z-index: 20; background: var(--red-flash); opacity: 0; pointer-events: none; }
+    #wrong-msg { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%); z-index: 21; background: #c0392b; border-radius: 16px; padding: 18px 28px; opacity: 0; pointer-events: none; }
     #wrong-msg.show { opacity: 1; }
     
-    .dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.2); }
-    .dot.done { background: #f5c842; }
-    .dot.active { background: #4fc3f7; }
+    #screen-end { background: linear-gradient(160deg, #0ea5e9 0%, #38bdf8 40%, #7dd3fc 100%); gap: 22px; }
+    .btn-restart { background: #1a2a4a; color: #f5c842; padding: 14px 40px; border-radius: 50px; cursor: pointer; border:none; }
+
+    .confetti-piece { position: fixed; width: 10px; height: 14px; top: -20px; animation: confetti-fall var(--cf-d) linear var(--cf-delay) infinite; }
+    @keyframes confetti-fall { 100% { transform: translateY(110vh) rotate(720deg); opacity:0; } }
   </style>
 </head>
 <body>
 
-<div id="starfield"></div>
-<div id="rain-container"></div>
-<div id="lightning"></div>
-<span id="boat-icon">⛵</span>
-
 <section class="screen active" id="screen-intro">
-  <div class="intro-title"><span class="main">폭풍 탈출</span></div>
+  <div class="intro-title">
+    <span class="sub">갈릴리 항해사 자격시험</span>
+    <span class="main">폭풍 탈출</span>
+  </div>
   <div class="user-info-form">
     <select id="sun-select"><option value="" disabled selected>순 선택</option></select>
     <input type="text" id="name-input" placeholder="이름을 입력하세요" />
@@ -75,77 +98,91 @@
   <div id="game-tap-area"></div>
   <div id="water-fill"></div>
   <div id="game-hud">
-    <div id="instruction">물 퍼내기 미션!<br><span>아래쪽 물을 터치하여 위로 드래그하세요!</span></div>
-    <div id="touch-count" style="text-align:center; font-size:40px; font-weight:900;">0 / 30</div>
+    <div id="instruction">배에 물이 찹니다!<br><span>차오른 물을 위로 드래그</span>해서 퍼내세요! 🪣</div>
+    <div style="text-align: center;">
+      <div id="touch-count">0</div>
+      <div id="count-label">/ <span id="goal-label">30</span></div>
+    </div>
+    <div id="prog-bar-wrap"><div id="prog-bar"></div></div>
   </div>
 </section>
 
 <section class="screen" id="screen-quiz">
-  <div class="quiz-dots" id="quiz-dots" style="display:flex; gap:8px;"></div>
-  <div class="quiz-q" id="quiz-q" style="padding:20px; text-align:center;"></div>
+  <div class="quiz-header">
+    <div class="quiz-step" id="quiz-step"></div>
+    <div class="quiz-q" id="quiz-q"></div>
+  </div>
   <div class="quiz-card" id="quiz-card"></div>
 </section>
 
 <section class="screen" id="screen-end">
-  <div class="main">미션 성공!</div>
-  <button class="btn-restart" id="btn-restart">🔄 다시하기</button>
+  <div class="main">Mission Complete!</div>
+  <button class="btn-restart" id="btn-restart">🔄 다시 도전하기</button>
 </section>
 
 <div id="wrong-overlay"></div>
-<div id="wrong-msg"><div class="txt" id="wrong-txt" style="font-weight:bold;">다시 생각해봐요!</div></div>
+<div id="wrong-msg"><span class="emoji">⛈️</span><span class="txt" id="wrong-txt">다시 생각해봐요!</span></div>
 
 <script>
 const $ = id => document.getElementById(id);
-let touchCount = 0; let currentGoal = 30; let startY = 0;
 
-// Setup
-(function() {
-  const sunSelect = $('sun-select');
-  Array.from({length: 13}, (_, i) => i + 1).sort(() => Math.random() - 0.5).forEach(s => {
-    let opt = document.createElement('option'); opt.value = s + '순'; opt.textContent = s + '순'; sunSelect.appendChild(opt);
-  });
-  $('btn-start').onclick = () => { if($('sun-select').value && $('name-input').value) startGame(); else alert("정보를 입력하세요"); };
-})();
-
-function startGame() { showScreen('game'); touchCount = 0; updateUI(); }
+/* 화면 전환 */
 function showScreen(name) {
   Object.values({intro:$('screen-intro'), game:$('screen-game'), quiz:$('screen-quiz'), end:$('screen-end')}).forEach(s => s.classList.remove('active'));
-  $(name === 'game' ? 'screen-game' : name === 'quiz' ? 'screen-quiz' : name === 'end' ? 'screen-end' : 'screen-intro').classList.add('active');
+  $(`screen-${name}`).classList.add('active');
 }
 
-function updateUI() {
-  $('touch-count').textContent = touchCount + " / " + currentGoal;
+/* 드래그 로직 (컴퓨터/모바일 통합) */
+let isDown = false;
+let startY = 0;
+let touchCount = 0;
+let currentGoal = 30;
+
+const tapArea = $('game-tap-area');
+
+tapArea.addEventListener('pointerdown', (e) => {
+  isDown = true;
+  startY = e.clientY;
+});
+
+tapArea.addEventListener('pointerup', (e) => {
+  if (!isDown) return;
+  isDown = false;
+  let endY = e.clientY;
+  
+  // 위로 50px 이상 드래그 시
+  if (startY - endY > 50) {
+    handleDragAction(e.clientX, e.clientY);
+  }
+});
+
+// 드래그 중 영역 벗어났을 때 처리
+tapArea.addEventListener('pointerleave', () => { isDown = false; });
+
+function handleDragAction(x, y) {
+  if (touchCount >= currentGoal) return;
+  touchCount++;
+  
+  // UI 업데이트
+  $('touch-count').textContent = touchCount;
+  $('prog-bar').style.width = `${(touchCount/currentGoal)*100}%`;
   const waterH = 60 - (touchCount / currentGoal) * 50;
   $('water-fill').style.height = `${waterH}%`;
-}
+  tapArea.style.height = `calc(${waterH}% + 20px)`;
 
-// 드래그 로직 (화면 전체 감지)
-$('game-tap-area').addEventListener('touchstart', (e) => {
-  startY = e.touches[0].clientY;
-  // 현재 물 높이 확인 (물 높이 퍼센트 계산)
-  const waterHeightPx = (currentGoal > 0) ? (window.innerHeight * (60 - (touchCount / currentGoal) * 50) / 100) : 0;
-  // 시작점이 물 영역(아래쪽)인지 확인
-  if (startY < (window.innerHeight - waterHeightPx - 50)) { startY = -1; } 
-}, { passive: false });
-
-$('game-tap-area').addEventListener('touchend', (e) => {
-  if (startY === -1) return; // 물 영역 밖에서 시작했으면 무시
-  const endY = e.changedTouches[0].clientY;
-  if (startY - endY > 50) { // 위로 드래그
-    touchCount++;
-    updateUI();
-    spawnBucket(e.changedTouches[0].clientX, e.changedTouches[0].clientY);
-    if (touchCount >= currentGoal) showQuiz(0);
-  }
-}, { passive: false });
-
-function spawnBucket(x, y) {
-  const b = document.createElement('div'); b.className = 'bucket-pop'; b.textContent = '🪣';
-  b.style.left = `${x-18}px`; b.style.top = `${y-18}px`; document.body.appendChild(b);
+  // 버킷 효과
+  const b = document.createElement('div');
+  b.className = 'bucket-pop'; b.textContent = '🪣';
+  b.style.left = `${x - 18}px`; b.style.top = `${y - 18}px`;
+  document.body.appendChild(b);
   b.addEventListener('animationend', () => b.remove());
+
+  if (touchCount >= currentGoal) {
+    setTimeout(() => showQuizScreen(false), 500);
+  }
 }
 
-/* Quiz Logic */
+/* 퀴즈 및 초기화 로직 (이전 버전 유지) */
 const QUIZZES = [
   { type: 'ox', q: '제자들은 갈릴리 바다의 베테랑 어부였기 때문에 폭풍을 두려워하지 않았다.', answer: 'X' },
   { type: 'ox', q: '갈릴리 바다는 분지 지형이라 찬 공기가 내려오면 순식간에 예고 없는 광풍으로 변한다.', answer: 'O' },
@@ -160,40 +197,72 @@ const QUIZZES = [
 ];
 
 let currentQ = 0;
-function showQuiz(idx) {
-  currentQ = idx;
+
+function showQuizScreen(resetQ = true) {
+  if(resetQ) currentQ = 0;
   showScreen('quiz');
+  renderQuiz();
+}
+
+function renderQuiz() {
   const q = QUIZZES[currentQ];
+  $('quiz-step').textContent = `문제 ${currentQ + 1} / ${QUIZZES.length}`;
   $('quiz-q').textContent = q.q;
-  const dots = $('quiz-dots'); dots.innerHTML = '';
-  QUIZZES.forEach((_, i) => { const d = document.createElement('div'); d.className = 'dot ' + (i < idx ? 'done' : (i === idx ? 'active' : '')); dots.appendChild(d); });
-  
   const card = $('quiz-card'); card.innerHTML = '';
+  
   if (q.type === 'ox') {
-    ['O','X'].forEach(val => {
-      const btn = document.createElement('button'); btn.className = 'ox-btn'; btn.textContent = val === 'O' ? '⭕' : '❌';
-      btn.onclick = () => checkAnswer(val); card.appendChild(btn);
-    });
+    card.innerHTML = `<div class="ox-group"><button class="ox-btn o-btn" data-val="O">⭕</button><button class="ox-btn x-btn" data-val="X">❌</button></div>`;
+    card.querySelectorAll('.ox-btn').forEach(btn => btn.addEventListener('click', () => checkAnswer(btn.dataset.val)));
   } else {
-    card.innerHTML = `<input class="subj-input" id="subj-input" placeholder="정답 입력..." /><button class="btn-submit" id="btn-submit">확인</button>`;
-    $('btn-submit').onclick = () => checkAnswer($('subj-input').value);
+    card.innerHTML = `<div class="subj-group"><input class="subj-input" id="subj-input" type="text" placeholder="정답 입력..." /><button class="btn-submit" id="btn-submit">확인 ✅</button></div>`;
+    $('btn-submit').addEventListener('click', () => checkAnswer($('subj-input').value.trim()));
   }
 }
 
 function checkAnswer(val) {
   const q = QUIZZES[currentQ];
-  const correct = (q.type === 'ox') ? (val === q.answer) : q.contains.some(k => val.includes(k));
+  let correct = (q.type === 'ox') ? (val.toUpperCase() === q.answer.toUpperCase()) : q.contains.some(k => val.includes(k));
   if (correct) {
     currentQ++;
-    if (currentQ >= QUIZZES.length) { showScreen('end'); /* Webhook logic here */ } else showQuiz(currentQ);
+    if (currentQ >= QUIZZES.length) sendWebhookAndFinish();
+    else renderQuiz();
   } else {
-    currentGoal *= 2; touchCount = 0;
+    currentGoal *= 2;
     $('wrong-overlay').style.opacity = '1'; $('wrong-msg').classList.add('show');
-    setTimeout(() => { $('wrong-overlay').style.opacity = '0'; $('wrong-msg').classList.remove('show'); startGame(); }, 1500);
+    setTimeout(() => { $('wrong-overlay').style.opacity = '0'; $('wrong-msg').classList.remove('show'); startGameScreen(); }, 1500);
   }
 }
 
-$('btn-restart').onclick = () => location.reload();
+function startGameScreen() {
+  showScreen('game');
+  touchCount = 0;
+  $('goal-label').textContent = currentGoal;
+  $('touch-count').textContent = '0';
+  $('prog-bar').style.width = '0%';
+  $('water-fill').style.height = '60%';
+  $('game-tap-area').style.height = '60%';
+}
+
+function sendWebhookAndFinish() {
+  const payload = { "과": "1과", "순": $('sun-select').value, "이름": $('name-input').value.trim() };
+  fetch("https://script.google.com/macros/s/AKfycbyTs7CZtVqTwXbftQJxW76NxXzXvzTTyJfULKqsRyjczf_TqerBxz4Yv5_9QQSjLSveIg/exec", {
+    method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload)
+  });
+  showScreen('end');
+}
+
+/* 초기화 */
+(function init() {
+  const sunSelect = $('sun-select');
+  Array.from({length: 13}, (_, i) => i + 1).sort(() => Math.random() - 0.5).forEach(s => {
+    let opt = document.createElement('option'); opt.value = s + '순'; opt.textContent = s + '순'; sunSelect.appendChild(opt);
+  });
+  $('btn-start').addEventListener('click', () => {
+    if (!$('sun-select').value || !$('name-input').value.trim()) return alert("순과 이름을 입력하세요!");
+    startGameScreen();
+  });
+  $('btn-restart').addEventListener('click', () => location.reload());
+})();
 </script>
 </body>
 </html>
